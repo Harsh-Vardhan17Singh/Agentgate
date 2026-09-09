@@ -6,7 +6,11 @@ import { PolicyModule } from './policy/policy.module';
 import { RiskModule } from './risk/risk.module';
 
 @Module({
-  imports: [GatewayModule, PolicyModule, RiskModule],
+  imports: [
+    GatewayModule,
+    PolicyModule,
+    RiskModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
