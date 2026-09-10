@@ -6,4 +6,4 @@ import { ToolsService } from "./tools.service";
   exports: [ToolsService],
 })
 
-export class ToolsModeule {}
+export class ToolsModule {}
