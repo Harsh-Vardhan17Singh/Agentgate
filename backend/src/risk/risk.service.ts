@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ToolDefinition } from '../tools/tools.service';
 
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
@@ -10,48 +11,72 @@ export interface RiskResult {
 
 @Injectable()
 export class RiskService {
-  calculateRisk(tool: string, operation: string): RiskResult {
-    const action = `${tool}.${operation}`.toLowerCase();
+  calculateRisk(
+    toolDefinition: ToolDefinition,
+    target: string,
+  ): RiskResult {
+    let score = this.getBaseScore(toolDefinition.sensitivity);
+    let reason = `Base risk is based on ${toolDefinition.sensitivity.toLowerCase()} tool sensitivity.`;
 
-    if (
-      action.includes('delete_repository') ||
-      action.includes('delete_all') ||
-      action.includes('drop_table')
-    ) {
-      return {
-        score: 98,
-        level: 'CRITICAL',
-        reason: 'Destructive operation affecting a major resource.',
-      };
+    const normalizedTarget = target.toLowerCase();
+
+    // Production is more sensitive than a normal development target.
+    if (normalizedTarget === 'production') {
+      score += 20;
+      reason += ' Production is a sensitive target.';
     }
 
+    // Destructive operations receive additional risk.
     if (
-      action.includes('delete') ||
-      action.includes('modify') ||
-      action.includes('update')
+      toolDefinition.operation.toLowerCase().includes('delete') ||
+      toolDefinition.operation.toLowerCase().includes('drop')
     ) {
-      return {
-        score: 75,
-        level: 'HIGH',
-        reason: 'Operation can modify or remove existing data.',
-      };
+      score += 10;
+      reason += ' The operation is destructive.';
     }
 
-    if (
-      action.includes('send_email') ||
-      action.includes('send_message')
-    ) {
-      return {
-        score: 40,
-        level: 'MEDIUM',
-        reason: 'External communication can have user or business impact.',
-      };
-    }
+    // Never allow the score to exceed 100.
+    score = Math.min(score, 100);
 
     return {
-      score: 10,
-      level: 'LOW',
-      reason: 'Read-only or low-impact operation.',
+      score,
+      level: this.getRiskLevel(score),
+      reason,
     };
+  }
+
+  private getBaseScore(sensitivity: ToolDefinition['sensitivity']): number {
+    switch (sensitivity) {
+      case 'LOW':
+        return 10;
+
+      case 'MEDIUM':
+        return 40;
+
+      case 'HIGH':
+        return 70;
+
+      case 'CRITICAL':
+        return 90;
+
+      default:
+        return 100;
+    }
+  }
+
+  private getRiskLevel(score: number): RiskLevel {
+    if (score >= 90) {
+      return 'CRITICAL';
+    }
+
+    if (score >= 70) {
+      return 'HIGH';
+    }
+
+    if (score >= 40) {
+      return 'MEDIUM';
+    }
+
+    return 'LOW';
   }
 }

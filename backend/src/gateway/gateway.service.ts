@@ -41,8 +41,8 @@ export class GatewayService {
 
     // Step 2: Calculate the risk of the registered operation.
     const risk = this.riskService.calculateRisk(
-      request.tool,
-      request.operation,
+      toolDefinition,
+      request.target,
     );
 
     // Step 3: Evaluate the operation against policy.
