@@ -3,6 +3,7 @@ import { PolicyService } from '../policy/policy.service';
 import { RiskService } from '../risk/risk.service';
 import { ToolsService } from '../tools/tools.service';
 import { ToolCallDto } from './dto/tool-call.dto';
+import { ApprovalService } from '../approval/approval.service';
 
 @Injectable()
 export class GatewayService {
@@ -10,6 +11,7 @@ export class GatewayService {
     private readonly policyService: PolicyService,
     private readonly riskService: RiskService,
     private readonly toolsService: ToolsService,
+    private readonly approvalService: ApprovalService
   ) {}
 
   processToolCall(request: ToolCallDto) {
@@ -82,6 +84,11 @@ export class GatewayService {
 
     // Step 6: Pause the request if human approval is required.
     if (decision === 'REQUIRE_APPROVAL') {
+      const approval = this.approvalService.createApproval(
+        request,
+        risk,
+      );
+      
       return {
         ...response,
         executed: false,
