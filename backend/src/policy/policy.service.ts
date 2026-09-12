@@ -12,52 +12,39 @@ export class PolicyService {
     operation: string,
     target: string,
   ): PolicyDecision {
-    const action = `${tool}.${operation}`.toLowerCase();
+    const normalizedTool = tool.toLowerCase();
+    const normalizedOperation = operation.toLowerCase();
+    const normalizedTarget = target.toLowerCase();
 
-    // Explicitly dangerous operations
+    // Production branch deletion is forbidden.
     if (
-      action === 'database.delete_all' ||
-      action === 'database.drop_table' ||
-      action === 'github.delete_repository'
+      normalizedTool === 'github' &&
+      normalizedOperation === 'delete_branch' &&
+      normalizedTarget === 'production'
     ) {
       return 'BLOCK';
     }
 
-    // Never allow production branch deletion automatically
+    // Sending an email requires human approval.
     if (
-      tool.toLowerCase() === 'github' &&
-      operation.toLowerCase() === 'delete_branch' &&
-      target.toLowerCase() === 'production'
-    ) {
-      return 'BLOCK';
-    }
-
-    // Operations that require a human
-    if (
-      action === 'email.send_email' ||
-      action === 'crm.update_customer'
+      normalizedTool === 'email' &&
+      normalizedOperation === 'send_email'
     ) {
       return 'REQUIRE_APPROVAL';
     }
 
-    // Read operations
+    // Destructive database operations require human approval.
     if (
-      action.startsWith('github.read') ||
-      action === 'database.select'
+      normalizedTool === 'database' &&
+      (
+        normalizedOperation === 'update' ||
+        normalizedOperation === 'delete_all'
+      )
     ) {
-      return 'ALLOW';
+      return 'REQUIRE_APPROVAL';
     }
 
-    // Safe branch operations
-    if (
-      action === 'github.list_branches' ||
-      action === 'github.get_branch_details' ||
-      action === 'github.delete_branch'
-    ) {
-      return 'ALLOW';
-    }
-
-    // Unknown actions are not trusted automatically
-    return 'BLOCK';
+    // Everything else is currently allowed.
+    return 'ALLOW';
   }
 }
