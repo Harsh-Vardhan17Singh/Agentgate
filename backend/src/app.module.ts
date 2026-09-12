@@ -5,6 +5,7 @@ import { GatewayModule } from './gateway/gateway.module';
 import { PolicyModule } from './policy/policy.module';
 import { RiskModule } from './risk/risk.module';
 import { ToolsModule } from './tools/tools.module';
+import { ApprovalModule } from './approval/approval.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { ToolsModule } from './tools/tools.module';
     PolicyModule,
     RiskModule,
     ToolsModule,
+    ApprovalModule,
   ],
   controllers: [AppController],
   providers: [AppService],
