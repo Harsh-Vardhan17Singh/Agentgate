@@ -88,10 +88,11 @@ export class GatewayService {
         request,
         risk,
       );
-      
+
       return {
         ...response,
         executed: false,
+        approval,
         message: 'Human approval required before execution.',
       };
     }
