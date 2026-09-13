@@ -4,6 +4,7 @@ import { RiskService } from '../risk/risk.service';
 import { ToolsService } from '../tools/tools.service';
 import { ToolCallDto } from './dto/tool-call.dto';
 import { ApprovalService } from '../approval/approval.service';
+import { ExecutionService } from '../execution/execution.service';
 
 @Injectable()
 export class GatewayService {
@@ -11,7 +12,8 @@ export class GatewayService {
     private readonly policyService: PolicyService,
     private readonly riskService: RiskService,
     private readonly toolsService: ToolsService,
-    private readonly approvalService: ApprovalService
+    private readonly approvalService: ApprovalService,
+    private readonly executionService: ExecutionService,
   ) {}
 
   processToolCall(request: ToolCallDto) {

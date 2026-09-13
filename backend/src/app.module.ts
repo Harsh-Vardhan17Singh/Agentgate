@@ -6,6 +6,7 @@ import { PolicyModule } from './policy/policy.module';
 import { RiskModule } from './risk/risk.module';
 import { ToolsModule } from './tools/tools.module';
 import { ApprovalModule } from './approval/approval.module';
+import { ExecutionModule } from './execution/execution.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { ApprovalModule } from './approval/approval.module';
     RiskModule,
     ToolsModule,
     ApprovalModule,
+    ExecutionModule,
   ],
   controllers: [AppController],
   providers: [AppService],
