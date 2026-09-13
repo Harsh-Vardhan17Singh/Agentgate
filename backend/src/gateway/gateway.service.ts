@@ -99,22 +99,17 @@ export class GatewayService {
       };
     }
 
-    // Step 7: Execute the safe mock tool.
+    // Step 7: Execute the approved tool through ExecutionService.
+    const result = this.executionService.execute(request);
+
+
     return {
       ...response,
       executed: true,
-      result: this.executeMockTool(request),
+      result,
       message: 'Tool call allowed and executed.',
     };
   }
 
-  private executeMockTool(request: ToolCallDto) {
-    return {
-      tool: request.tool,
-      operation: request.operation,
-      target: request.target,
-      status: 'SUCCESS',
-      simulated: true,
-    };
-  }
+
 }
