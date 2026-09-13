@@ -1,8 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException,Injectable, NotFoundException } from '@nestjs/common';
 import { ToolCallDto } from '../gateway/dto/tool-call.dto';
 import { RiskResult } from '../risk/risk.service';
 
-export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type ApprovalStatus =
+  | 'PENDING'
+  | 'APPROVED'
+  | 'REJECTED';
 
 export interface ApprovalRequest {
   id: string;
@@ -58,7 +61,9 @@ export class ApprovalService {
     const approval = this.getApproval(id);
 
     if (approval.status !== 'PENDING') {
-      return approval;
+      throw new ConflictException(
+        `Approval cannot be approved because it is already ${approval.status}.`,
+      );
     }
 
     approval.status = 'APPROVED';
@@ -71,7 +76,9 @@ export class ApprovalService {
     const approval = this.getApproval(id);
 
     if (approval.status !== 'PENDING') {
-      return approval;
+      throw new ConflictException(
+        `Approval cannot be rejected because it is already ${approval.status}.`,
+      );
     }
 
     approval.status = 'REJECTED';
