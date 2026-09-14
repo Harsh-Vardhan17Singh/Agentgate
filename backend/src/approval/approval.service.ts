@@ -1,6 +1,7 @@
 import { ConflictException,Injectable, NotFoundException } from '@nestjs/common';
 import { ToolCallDto } from '../gateway/dto/tool-call.dto';
 import { RiskResult } from '../risk/risk.service';
+import { AuditService } from '../audit/audit.service';
 
 export type ApprovalStatus =
   | 'PENDING'
@@ -19,6 +20,10 @@ export interface ApprovalRequest {
 @Injectable()
 export class ApprovalService {
   private readonly approvals: ApprovalRequest[] = [];
+
+  constructor(
+    private readonly auditService:AuditService,
+  ) {}
 
   createApproval(
     request: ToolCallDto,
@@ -69,6 +74,18 @@ export class ApprovalService {
     approval.status = 'APPROVED';
     approval.reviewedAt = new Date().toISOString();
 
+    this.auditService.record({
+      agentId:approval.request.agentId,
+      tool:approval.request.tool,
+      operation:approval.request.operation,
+      target:approval.request.target,
+      decision:'APPROVED',
+      riskScore:approval.risk.score,
+      riskLevel:approval.risk.level,
+      executed:false,
+      event:'APPROVED',
+    })
+
     return approval;
   }
 
@@ -83,6 +100,18 @@ export class ApprovalService {
 
     approval.status = 'REJECTED';
     approval.reviewedAt = new Date().toISOString();
+
+    this.auditService.record({
+      agentId:approval.request.agentId,
+      tool:approval.request.tool,
+      operation:approval.request.operation,
+      target:approval.request.target,
+      decision:'REJECTED',
+      riskScore:approval.risk.score,
+      riskLevel:approval.risk.level,
+      executed:false,
+      event:'REJECTED',
+    })
 
     return approval;
   }
