@@ -91,6 +91,17 @@ export class GatewayService {
 
     // Step 5: Block the request if policy rejected it.
     if (decision === 'BLOCK') {
+      this.auditService.record({
+        agentId:request.agentId,
+        tool:request.tool,
+        operation:request.operation,
+        target:request.target,
+        decision,
+        riskScore:risk.score,
+        riskLevel:risk.level,
+        executed:false,
+        event:'BLOCKED',
+      })
       return {
         ...response,
         executed: false,
@@ -104,6 +115,17 @@ export class GatewayService {
         request,
         risk,
       );
+      this.auditService.record({
+        agentId:request.agentId,
+        tool:request.tool,
+        operation:request.operation,
+        target:request.target,
+        decision,
+        riskScore:risk.score,
+        riskLevel:risk.level,
+        executed:false,
+        event:'APPROVAL_REQUIRED',
+      })
 
       return {
         ...response,
@@ -115,7 +137,18 @@ export class GatewayService {
 
     // Step 7: Execute the approved tool through ExecutionService.
     const result = this.executionService.execute(request);
-
+    
+    this.auditService.record({
+  agentId: request.agentId,
+  tool: request.tool,
+  operation: request.operation,
+  target: request.target,
+  decision: 'ALLOW',
+  riskScore: risk.score,
+  riskLevel: risk.level,
+  executed: true,
+  event: 'EXECUTED',
+});
 
     return {
       ...response,
