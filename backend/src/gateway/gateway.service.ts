@@ -5,6 +5,7 @@ import { ToolsService } from '../tools/tools.service';
 import { ToolCallDto } from './dto/tool-call.dto';
 import { ApprovalService } from '../approval/approval.service';
 import { ExecutionService } from '../execution/execution.service';
+import { AuditService } from '../audit/audit.service'; 
 
 @Injectable()
 export class GatewayService {
@@ -14,6 +15,7 @@ export class GatewayService {
     private readonly toolsService: ToolsService,
     private readonly approvalService: ApprovalService,
     private readonly executionService: ExecutionService,
+    private readonly auditService: AuditService,
   ) {}
 
   processToolCall(request: ToolCallDto) {
@@ -39,6 +41,18 @@ export class GatewayService {
       };
 
       console.log('[AGENTGATE]', JSON.stringify(response, null, 2));
+
+      this.auditService.record({
+        agentId: request.agentId,
+        tool : request.tool,
+        operation:request.operation,
+        target: request.target,
+        decision:'BLOCK',
+        riskScore:100,
+        riskLevel:'CRITICAL',
+        executed:false,
+        event:'BLOCKED',
+      })
 
       return response;
     }

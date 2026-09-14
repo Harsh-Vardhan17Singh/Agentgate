@@ -6,6 +6,7 @@ import { RiskModule } from '../risk/risk.module';
 import { ToolsModule } from '../tools/tools.module';
 import { ApprovalModule } from '../approval/approval.module';
 import { ExecutionModule } from '../execution/execution.module';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
   imports: [PolicyModule,
@@ -13,6 +14,7 @@ import { ExecutionModule } from '../execution/execution.module';
             ToolsModule,
             ApprovalModule,
             ExecutionModule,
+            AuditModule,
            ],
   controllers: [GatewayController],
   providers: [GatewayService],
