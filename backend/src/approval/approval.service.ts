@@ -2,6 +2,7 @@ import { ConflictException,Injectable, NotFoundException } from '@nestjs/common'
 import { ToolCallDto } from '../gateway/dto/tool-call.dto';
 import { RiskResult } from '../risk/risk.service';
 import { AuditService } from '../audit/audit.service';
+import { ExecutionService } from '../execution/execution.service';
 
 export type ApprovalStatus =
   | 'PENDING'
@@ -22,6 +23,7 @@ export class ApprovalService {
   private readonly approvals: ApprovalRequest[] = [];
 
   constructor(
+    private readonly executive : ExecutionService,
     private readonly auditService:AuditService,
   ) {}
 
@@ -62,32 +64,51 @@ export class ApprovalService {
     return approval;
   }
 
-  approve(id: string): ApprovalRequest {
-    const approval = this.getApproval(id);
+  approve(id: string) {
+  const approval = this.getApproval(id);
 
-    if (approval.status !== 'PENDING') {
-      throw new ConflictException(
-        `Approval cannot be approved because it is already ${approval.status}.`,
-      );
-    }
-
-    approval.status = 'APPROVED';
-    approval.reviewedAt = new Date().toISOString();
-
-    this.auditService.record({
-      agentId:approval.request.agentId,
-      tool:approval.request.tool,
-      operation:approval.request.operation,
-      target:approval.request.target,
-      decision:'APPROVED',
-      riskScore:approval.risk.score,
-      riskLevel:approval.risk.level,
-      executed:false,
-      event:'APPROVED',
-    })
-
-    return approval;
+  if (approval.status !== 'PENDING') {
+    throw new ConflictException(
+      `Approval cannot be approved because it is already ${approval.status}.`,
+    );
   }
+
+  approval.status = 'APPROVED';
+  approval.reviewedAt = new Date().toISOString();
+
+  this.auditService.record({
+    agentId: approval.request.agentId,
+    tool: approval.request.tool,
+    operation: approval.request.operation,
+    target: approval.request.target,
+    decision: 'APPROVED',
+    riskScore: approval.risk.score,
+    riskLevel: approval.risk.level,
+    executed: false,
+    event: 'APPROVED',
+  });
+
+  const result = this.executive.execute(approval.request);
+
+  this.auditService.record({
+    agentId: approval.request.agentId,
+    tool: approval.request.tool,
+    operation: approval.request.operation,
+    target: approval.request.target,
+    decision: 'APPROVED',
+    riskScore: approval.risk.score,
+    riskLevel: approval.risk.level,
+    executed: true,
+    event: 'EXECUTED',
+  });
+
+  return {
+    approval,
+    executed: true,
+    result,
+    message: 'Approval granted and tool executed.',
+  };
+}
 
   reject(id: string): ApprovalRequest {
     const approval = this.getApproval(id);
