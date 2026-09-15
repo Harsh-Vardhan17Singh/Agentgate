@@ -1,14 +1,30 @@
-import { Controller, Get } from '@nestjs/common';
-import { AuditService } from '../audit/audit.service';
+import {
+  Controller,
+  Get,
+  Param,
+  Post,
+} from '@nestjs/common';
 
-@Controller('audit')
+import { ApprovalService } from './approval.service';
+
+@Controller('approval')
 export class ApprovalController {
   constructor(
-    private readonly auditService: AuditService,
+    private readonly approvalService: ApprovalService,
   ) {}
 
-  @Get()
-  getAuditLogs() {
-    return this.auditService.getEvents();
+  @Get('pending')
+  getPendingApprovals() {
+    return this.approvalService.getPendingApprovals();
+  }
+
+  @Post(':id/approve')
+  approve(@Param('id') id: string) {
+    return this.approvalService.approve(id);
+  }
+
+  @Post(':id/reject')
+  reject(@Param('id') id: string) {
+    return this.approvalService.reject(id);
   }
 }
