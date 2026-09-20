@@ -1,5 +1,5 @@
 import { ConflictException,Injectable, NotFoundException } from '@nestjs/common';
-import { ToolCallDto } from '../gateway/dto/tool-call.dto';
+import { AuthenticatedToolCall } from '../gateway/dto/authenticated-tool-call';
 import { RiskResult } from '../risk/risk.service';
 import { AuditService } from '../audit/audit.service';
 import { ExecutionService } from '../execution/execution.service';
@@ -11,7 +11,7 @@ export type ApprovalStatus =
 
 export interface ApprovalRequest {
   id: string;
-  request: ToolCallDto;
+  request: AuthenticatedToolCall;
   risk: RiskResult;
   status: ApprovalStatus;
   createdAt: string;
@@ -28,7 +28,7 @@ export class ApprovalService {
   ) {}
 
   createApproval(
-    request: ToolCallDto,
+    request: AuthenticatedToolCall,
     risk: RiskResult,
   ): ApprovalRequest {
     const approval: ApprovalRequest = {

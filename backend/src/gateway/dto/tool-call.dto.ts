@@ -8,10 +8,6 @@ import {
 export class ToolCallDto {
   @IsString()
   @IsNotEmpty()
-  agentId: string;
-
-  @IsString()
-  @IsNotEmpty()
   tool: string;
 
   @IsString()

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PolicyService } from '../policy/policy.service';
 import { RiskService } from '../risk/risk.service';
 import { ToolsService } from '../tools/tools.service';
-import { ToolCallDto } from './dto/tool-call.dto';
+import { AuthenticatedToolCall } from './dto/authenticated-tool-call';
 import { ApprovalService } from '../approval/approval.service';
 import { ExecutionService } from '../execution/execution.service';
 import { AuditService } from '../audit/audit.service'; 
@@ -18,7 +18,7 @@ export class GatewayService {
     private readonly auditService: AuditService,
   ) {}
 
-  processToolCall(request: ToolCallDto) {
+  processToolCall(request: AuthenticatedToolCall) {
     // Step 1: Verify that the requested tool operation
     // is registered with AgentGate.
     const toolDefinition = this.toolsService.findTool(

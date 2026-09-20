@@ -7,6 +7,7 @@ import {
 
 import { GatewayService } from './gateway.service';
 import { ToolCallDto } from './dto/tool-call.dto';
+import { AuthenticatedToolCall } from './dto/authenticated-tool-call';
 import { AuthService } from '../auth/auth.service';
 
 @Controller('gateway')
@@ -23,8 +24,13 @@ export class GatewayController {
   ) {
     const agent = this.authService.authenticate(agentKey);
 
-    request.agentId = agent.agentId;
+    const authenticatedRequest: AuthenticatedToolCall = {
+      ...request,
+      agentId: agent.agentId,
+    };
 
-    return this.gatewayService.processToolCall(request);
+    return this.gatewayService.processToolCall(
+      authenticatedRequest,
+    );
   }
 }
