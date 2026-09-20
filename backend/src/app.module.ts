@@ -12,6 +12,7 @@ import { AuditModule } from './audit/audit.module';
 
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { MongooseModule } from '@nestjs/mongoose';
     ApprovalModule,
     ExecutionModule,
     AuditModule,
+    AuthModule,
   ],
 
   controllers: [AppController],
