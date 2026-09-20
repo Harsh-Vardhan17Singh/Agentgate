@@ -1,18 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Audit, AuditDocument } from './audit.schema';
 
-export type AuditEventType =
-  | 'BLOCKED'
-  | 'APPROVAL_REQUIRED'
-  | 'APPROVED'
-  | 'REJECTED'
-  | 'EXECUTED';
+import {
+  AuditEvent,
+  AuditEventDocument,
+  AuditEventType,
+} from './schemas/audit-event.schema';
 
-export interface AuditEvent {
-  id: string;
-  timestamp: string;
+export interface AuditEventInput {
   agentId: string;
   tool: string;
   operation: string;
@@ -27,34 +23,27 @@ export interface AuditEvent {
 @Injectable()
 export class AuditService {
   constructor(
-    @InjectModel(Audit.name)
-    private readonly auditModel: Model<AuditDocument>,
+    @InjectModel(AuditEvent.name)
+    private readonly auditEventModel: Model<AuditEventDocument>,
   ) {}
 
-  async record(
-    event: Omit<AuditEvent, 'id' | 'timestamp'>,
-  ): Promise<AuditEvent> {
-    const auditEvent: AuditEvent = {
-      id: crypto.randomUUID(),
-      timestamp: new Date().toISOString(),
-      ...event,
-    };
+  async record(event: AuditEventInput): Promise<AuditEventDocument> {
+    const auditEvent = new this.auditEventModel(event);
 
-    await this.auditModel.create(auditEvent);
+    const savedEvent = await auditEvent.save();
 
     console.log(
       '[AUDIT]',
-      JSON.stringify(auditEvent, null, 2),
+      JSON.stringify(savedEvent.toObject(), null, 2),
     );
 
-    return auditEvent;
+    return savedEvent;
   }
 
-  async getEvents(): Promise<AuditEvent[]> {
-    return this.auditModel
+  async getEvents(): Promise<AuditEventDocument[]> {
+    return this.auditEventModel
       .find()
-      .sort({ timestamp: -1 })
-      .lean<AuditEvent[]>()
+      .sort({ createdAt: -1 })
       .exec();
   }
 }
