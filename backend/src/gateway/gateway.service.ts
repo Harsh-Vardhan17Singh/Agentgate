@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
+
 import { PolicyService } from '../policy/policy.service';
 import { RiskService } from '../risk/risk.service';
 import { ToolsService } from '../tools/tools.service';
 import { AuthenticatedToolCall } from './dto/authenticated-tool-call';
 import { ApprovalService } from '../approval/approval.service';
 import { ExecutionService } from '../execution/execution.service';
-import { AuditService } from '../audit/audit.service'; 
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class GatewayService {
@@ -18,7 +19,7 @@ export class GatewayService {
     private readonly auditService: AuditService,
   ) {}
 
-  processToolCall(request: AuthenticatedToolCall) {
+  async processToolCall(request: AuthenticatedToolCall) {
     // Step 1: Verify that the requested tool operation
     // is registered with AgentGate.
     const toolDefinition = this.toolsService.findTool(
@@ -33,26 +34,30 @@ export class GatewayService {
         risk: {
           score: 100,
           level: 'CRITICAL',
-          reason: 'Tool operation is not registered with AgentGate.',
+          reason:
+            'Tool operation is not registered with AgentGate.',
         },
         timestamp: new Date().toISOString(),
         executed: false,
         message: 'Unknown tool operation blocked by AgentGate.',
       };
 
-      console.log('[AGENTGATE]', JSON.stringify(response, null, 2));
+      console.log(
+        '[AGENTGATE]',
+        JSON.stringify(response, null, 2),
+      );
 
-      this.auditService.record({
+      await this.auditService.record({
         agentId: request.agentId,
-        tool : request.tool,
-        operation:request.operation,
+        tool: request.tool,
+        operation: request.operation,
         target: request.target,
-        decision:'BLOCK',
-        riskScore:100,
-        riskLevel:'CRITICAL',
-        executed:false,
-        event:'BLOCKED',
-      })
+        decision: 'BLOCK',
+        riskScore: 100,
+        riskLevel: 'CRITICAL',
+        executed: false,
+        event: 'BLOCKED',
+      });
 
       return response;
     }
@@ -87,21 +92,25 @@ export class GatewayService {
     };
 
     // Temporary audit output.
-    console.log('[AGENTGATE]', JSON.stringify(response, null, 2));
+    console.log(
+      '[AGENTGATE]',
+      JSON.stringify(response, null, 2),
+    );
 
     // Step 5: Block the request if policy rejected it.
     if (decision === 'BLOCK') {
-      this.auditService.record({
-        agentId:request.agentId,
-        tool:request.tool,
-        operation:request.operation,
-        target:request.target,
+      await this.auditService.record({
+        agentId: request.agentId,
+        tool: request.tool,
+        operation: request.operation,
+        target: request.target,
         decision,
-        riskScore:risk.score,
-        riskLevel:risk.level,
-        executed:false,
-        event:'BLOCKED',
-      })
+        riskScore: risk.score,
+        riskLevel: risk.level,
+        executed: false,
+        event: 'BLOCKED',
+      });
+
       return {
         ...response,
         executed: false,
@@ -115,17 +124,18 @@ export class GatewayService {
         request,
         risk,
       );
-      this.auditService.record({
-        agentId:request.agentId,
-        tool:request.tool,
-        operation:request.operation,
-        target:request.target,
+
+      await this.auditService.record({
+        agentId: request.agentId,
+        tool: request.tool,
+        operation: request.operation,
+        target: request.target,
         decision,
-        riskScore:risk.score,
-        riskLevel:risk.level,
-        executed:false,
-        event:'APPROVAL_REQUIRED',
-      })
+        riskScore: risk.score,
+        riskLevel: risk.level,
+        executed: false,
+        event: 'APPROVAL_REQUIRED',
+      });
 
       return {
         ...response,
@@ -137,18 +147,18 @@ export class GatewayService {
 
     // Step 7: Execute the approved tool through ExecutionService.
     const result = this.executionService.execute(request);
-    
-    this.auditService.record({
-  agentId: request.agentId,
-  tool: request.tool,
-  operation: request.operation,
-  target: request.target,
-  decision: 'ALLOW',
-  riskScore: risk.score,
-  riskLevel: risk.level,
-  executed: true,
-  event: 'EXECUTED',
-});
+
+    await this.auditService.record({
+      agentId: request.agentId,
+      tool: request.tool,
+      operation: request.operation,
+      target: request.target,
+      decision: 'ALLOW',
+      riskScore: risk.score,
+      riskLevel: risk.level,
+      executed: true,
+      event: 'EXECUTED',
+    });
 
     return {
       ...response,
@@ -157,6 +167,4 @@ export class GatewayService {
       message: 'Tool call allowed and executed.',
     };
   }
-
-
 }
