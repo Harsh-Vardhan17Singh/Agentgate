@@ -18,11 +18,11 @@ export class GatewayController {
   ) {}
 
   @Post('tool-call')
-  processToolCall(
+  async processToolCall(
     @Headers('x-agent-key') agentKey: string,
     @Body() request: ToolCallDto,
   ) {
-    const agent = this.authService.authenticate(agentKey);
+    const agent = await this.authService.authenticate(agentKey);
 
     const authenticatedRequest: AuthenticatedToolCall = {
       ...request,
