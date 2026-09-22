@@ -3,7 +3,15 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 
-interface AgentIdentity {
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+
+import {
+  Agent,
+  AgentDocument,
+} from './schemas/agent.schema';
+
+export interface AgentIdentity {
   agentId: string;
   name: string;
   active: boolean;
@@ -11,37 +19,29 @@ interface AgentIdentity {
 
 @Injectable()
 export class AuthService {
-  private readonly agents = new Map<
-    string,
-    AgentIdentity
-  >([
-    [
-      'dev-agent-key',
-      {
-        agentId: 'demo-agent',
-        name: 'Development Agent',
-        active: true,
-      },
-    ],
-    [
-      'admin-agent-key',
-      {
-        agentId: 'admin-agent',
-        name: 'Admin Agent',
-        active: true,
-      },
-    ],
-  ]);
+  constructor(
+    @InjectModel(Agent.name)
+    private readonly agentModel: Model<AgentDocument>,
+  ) {}
 
-  authenticate(apiKey: string): AgentIdentity {
-    const agent = this.agents.get(apiKey);
+  async authenticate(apiKey: string): Promise<AgentIdentity> {
+    const agent = await this.agentModel
+      .findOne({
+        apiKey,
+        active: true,
+      })
+      .exec();
 
-    if (!agent || !agent.active) {
+    if (!agent) {
       throw new UnauthorizedException(
         'Invalid or inactive agent credentials',
       );
     }
 
-    return agent;
+    return {
+      agentId: agent.agentId,
+      name: agent.name,
+      active: agent.active,
+    };
   }
 }
