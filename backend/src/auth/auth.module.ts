@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AuthService } from './auth.service';
 import { AgentService } from './agent.service';
 import { AgentSeedService } from './agent-seed.service';
+import { AgentController } from './agent.controller';
 
 import {
   Agent,
@@ -19,6 +20,7 @@ import {
       },
     ]),
   ],
+  controllers: [AgentController],
   providers: [
     AuthService,
     AgentService,
