@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
 import { AuthService } from './auth.service';
+import { AgentService } from './agent.service';
 import { AgentSeedService } from './agent-seed.service';
 
 import {
@@ -20,8 +21,12 @@ import {
   ],
   providers: [
     AuthService,
+    AgentService,
     AgentSeedService,
   ],
-  exports: [AuthService],
+  exports: [
+    AuthService,
+    AgentService,
+  ],
 })
 export class AuthModule {}
