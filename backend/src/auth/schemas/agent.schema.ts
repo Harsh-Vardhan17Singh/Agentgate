@@ -32,6 +32,14 @@ export class Agent {
     default: true,
   })
   active: boolean;
+
+
+@Prop({
+  type:[String],
+  default:[],
+})
+permission:string[];
+
 }
 
 export const AgentSchema = SchemaFactory.createForClass(Agent);
