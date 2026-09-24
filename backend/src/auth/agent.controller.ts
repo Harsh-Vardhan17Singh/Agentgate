@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
 } from '@nestjs/common';
 
 import { AgentService } from './agent.service';
@@ -22,5 +23,25 @@ export class AgentController {
     @Param('agentId') agentId: string,
   ) {
     return this.agentService.getAgent(agentId);
+  }
+
+  @Patch(':agentId/activate')
+  activateAgent(
+    @Param('agentId') agentId: string,
+  ) {
+    return this.agentService.setAgentStatus(
+      agentId,
+      true,
+    );
+  }
+
+  @Patch(':agentId/deactivate')
+  deactivateAgent(
+    @Param('agentId') agentId: string,
+  ) {
+    return this.agentService.setAgentStatus(
+      agentId,
+      false,
+    );
   }
 }
