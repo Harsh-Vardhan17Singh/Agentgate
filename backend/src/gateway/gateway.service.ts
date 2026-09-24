@@ -1,4 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 
 import { PolicyService } from '../policy/policy.service';
 import { RiskService } from '../risk/risk.service';
@@ -7,6 +10,7 @@ import { AuthenticatedToolCall } from './dto/authenticated-tool-call';
 import { ApprovalService } from '../approval/approval.service';
 import { ExecutionService } from '../execution/execution.service';
 import { AuditService } from '../audit/audit.service';
+import { AuthorizationService } from '../auth/authorization.service';
 
 @Injectable()
 export class GatewayService {
@@ -17,10 +21,38 @@ export class GatewayService {
     private readonly approvalService: ApprovalService,
     private readonly executionService: ExecutionService,
     private readonly auditService: AuditService,
+    private readonly authorizationService: AuthorizationService,
   ) {}
 
   async processToolCall(request: AuthenticatedToolCall) {
-    // Step 1: Verify that the requested tool operation
+    // Step 1: Verify that the authenticated agent
+    // is authorized to perform this operation.
+    const authorized =
+      await this.authorizationService.authorize(
+        request.agentId,
+        request.tool,
+        request.operation,
+      );
+
+    if (!authorized) {
+      await this.auditService.record({
+        agentId: request.agentId,
+        tool: request.tool,
+        operation: request.operation,
+        target: request.target,
+        decision: 'BLOCK',
+        riskScore: 0,
+        riskLevel: 'NOT_EVALUATED',
+        executed: false,
+        event: 'BLOCKED',
+      });
+
+      throw new ForbiddenException(
+        `Agent '${request.agentId}' is not authorized to perform '${request.tool}:${request.operation}'`,
+      );
+    }
+
+    // Step 2: Verify that the requested tool operation
     // is registered with AgentGate.
     const toolDefinition = this.toolsService.findTool(
       request.tool,
@@ -62,20 +94,20 @@ export class GatewayService {
       return response;
     }
 
-    // Step 2: Calculate the risk of the registered operation.
+    // Step 3: Calculate the risk of the registered operation.
     const risk = this.riskService.calculateRisk(
       toolDefinition,
       request.target,
     );
 
-    // Step 3: Evaluate the operation against policy.
+    // Step 4: Evaluate the operation against policy.
     const policy = this.policyService.evaluate(
       request.tool,
       request.operation,
       request.target,
     );
 
-    // Step 4: Determine the final decision.
+    // Step 5: Determine the final decision.
     let decision = policy;
 
     // Critical operations are never executed automatically.
@@ -91,13 +123,12 @@ export class GatewayService {
       timestamp: new Date().toISOString(),
     };
 
-    // Temporary audit output.
     console.log(
       '[AGENTGATE]',
       JSON.stringify(response, null, 2),
     );
 
-    // Step 5: Block the request if policy rejected it.
+    // Step 6: Block the request if policy rejected it.
     if (decision === 'BLOCK') {
       await this.auditService.record({
         agentId: request.agentId,
@@ -118,7 +149,7 @@ export class GatewayService {
       };
     }
 
-    // Step 6: Pause the request if human approval is required.
+    // Step 7: Pause the request if human approval is required.
     if (decision === 'REQUIRE_APPROVAL') {
       const approval = this.approvalService.createApproval(
         request,
@@ -145,7 +176,7 @@ export class GatewayService {
       };
     }
 
-    // Step 7: Execute the approved tool through ExecutionService.
+    // Step 8: Execute the approved tool through ExecutionService.
     const result = this.executionService.execute(request);
 
     await this.auditService.record({
