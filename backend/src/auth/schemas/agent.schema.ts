@@ -38,7 +38,7 @@ export class Agent {
   type:[String],
   default:[],
 })
-permission:string[];
+permissions:string[];
 
 }
 
