@@ -177,7 +177,7 @@ export class GatewayService {
     }
 
     // Step 8: Execute the approved tool through ExecutionService.
-    const result = this.executionService.execute(request);
+    const result = await this.executionService.execute(request);
 
     await this.auditService.record({
       agentId: request.agentId,
