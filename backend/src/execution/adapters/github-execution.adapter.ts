@@ -1,4 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+} from '@nestjs/common';
 
 import { ToolCallDto } from '../../gateway/dto/tool-call.dto';
 
@@ -31,9 +34,23 @@ export class GitHubExecutionAdapter
     );
   }
 
+  private validateTarget(target: string): void {
+    const configuredRepository =
+      this.githubApiService.getConfiguredRepository();
+
+    if (target !== configuredRepository) {
+      throw new ForbiddenException(
+        `GitHub target '${target}' is not authorized. ` +
+          `AgentGate is configured for '${configuredRepository}'.`,
+      );
+    }
+  }
+
   async execute(
     request: ToolCallDto,
   ): Promise<ExecutionAdapterResult> {
+    this.validateTarget(request.target);
+
     if (request.operation === 'list_branches') {
       const branches =
         await this.githubApiService.listBranches();
@@ -63,4 +80,4 @@ export class GitHubExecutionAdapter
         'is not implemented yet.',
     };
   }
-}
+}                                              
