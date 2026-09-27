@@ -48,6 +48,10 @@ export class GitHubApiService {
     }
   }
 
+  getConfiguredRepository(): string {
+    return `${this.owner}/${this.repository}`;
+  }
+
   async listBranches() {
     const url =
       `https://api.github.com/repos/` +
