@@ -76,4 +76,78 @@ export class GitHubApiService {
 
     return response.json();
   }
+
+  async createBranch(
+    branchName: string,
+    sourceBranch: string,
+  ) {
+    const url =
+      `https://api.github.com/repos/` +
+      `${this.owner}/${this.repository}/git/refs`;
+
+    const sourceUrl =
+      `https://api.github.com/repos/` +
+      `${this.owner}/${this.repository}/git/ref/heads/` +
+      `${encodeURIComponent(sourceBranch)}`;
+
+    const sourceResponse = await fetch(
+      sourceUrl,
+      {
+        method: 'GET',
+        headers: {
+          Accept: 'application/vnd.github+json',
+          Authorization: `Bearer ${this.token}`,
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+      },
+    );
+
+    if (!sourceResponse.ok) {
+      const errorText =
+        await sourceResponse.text();
+
+      throw new InternalServerErrorException(
+        `GitHub source branch lookup failed (${sourceResponse.status}): ${errorText}`,
+      );
+    }
+
+    const sourceData =
+      (await sourceResponse.json()) as {
+        object?: {
+          sha?: string;
+        };
+      };
+
+    const sourceSha = sourceData.object?.sha;
+
+    if (!sourceSha) {
+      throw new InternalServerErrorException(
+        'GitHub source branch did not return a commit SHA.',
+      );
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/vnd.github+json',
+        Authorization: `Bearer ${this.token}`,
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ref: `refs/heads/${branchName}`,
+        sha: sourceSha,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+
+      throw new InternalServerErrorException(
+        `GitHub branch creation failed (${response.status}): ${errorText}`,
+      );
+    }
+
+    return response.json();
+  }
 }
