@@ -18,6 +18,14 @@ export class ToolsService {
       description: 'List repository branches.',
       sensitivity: 'LOW',
     },
+
+    {
+      name:'github',
+      operation:'create_branch',
+      description:'Create a new repository branch',
+      sensitivity:'MEDIUM'
+    },
+  
     {
       name: 'github',
       operation: 'get_branch_details',

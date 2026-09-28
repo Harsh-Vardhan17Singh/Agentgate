@@ -1,5 +1,6 @@
 import {
   Injectable,
+  BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
 
@@ -46,6 +47,60 @@ export class GitHubExecutionAdapter
     }
   }
 
+  private getBranchArguments(
+    request: ToolCallDto,
+  ): {
+    branch: string;
+    sourceBranch: string;
+  } {
+    const argumentsObject = request.arguments;
+
+    if (!argumentsObject) {
+      throw new BadRequestException(
+        'GitHub create_branch requires arguments.',
+      );
+    }
+
+    const branch = argumentsObject.branch;
+    const sourceBranch =
+      argumentsObject.sourceBranch;
+
+    if (
+      typeof branch !== 'string' ||
+      branch.trim() === ''
+    ) {
+      throw new BadRequestException(
+        'GitHub create_branch requires a valid branch argument.',
+      );
+    }
+
+    if (
+      typeof sourceBranch !== 'string' ||
+      sourceBranch.trim() === ''
+    ) {
+      throw new BadRequestException(
+        'GitHub create_branch requires a valid sourceBranch argument.',
+      );
+    }
+
+    if (branch === 'main') {
+      throw new BadRequestException(
+        'AgentGate does not allow creating the main branch.',
+      );
+    }
+
+    if (branch === sourceBranch) {
+      throw new BadRequestException(
+        'New branch must be different from sourceBranch.',
+      );
+    }
+
+    return {
+      branch: branch.trim(),
+      sourceBranch: sourceBranch.trim(),
+    };
+  }
+
   async execute(
     request: ToolCallDto,
   ): Promise<ExecutionAdapterResult> {
@@ -68,6 +123,33 @@ export class GitHubExecutionAdapter
       };
     }
 
+    if (request.operation === 'create_branch') {
+      const {
+        branch,
+        sourceBranch,
+      } = this.getBranchArguments(request);
+
+      const result =
+        await this.githubApiService.createBranch(
+          branch,
+          sourceBranch,
+        );
+
+      return {
+        tool: request.tool,
+        operation: request.operation,
+        target: request.target,
+        status: 'SUCCESS',
+        simulated: false,
+        executedAt: new Date().toISOString(),
+        data: {
+          branch,
+          sourceBranch,
+          github: result,
+        },
+      };
+    }
+
     return {
       tool: request.tool,
       operation: request.operation,
@@ -80,4 +162,4 @@ export class GitHubExecutionAdapter
         'is not implemented yet.',
     };
   }
-}                                              
+}
