@@ -1,4 +1,5 @@
 import {
+  HttpException,
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
@@ -52,6 +53,33 @@ export class GitHubApiService {
     return `${this.owner}/${this.repository}`;
   }
 
+  private async handleGitHubError(
+    response: Response,
+    operation: string,
+  ): Promise<never> {
+    const errorText = await response.text();
+
+    let message = errorText;
+
+    try {
+      const parsed = JSON.parse(errorText);
+
+      if (
+        parsed &&
+        typeof parsed.message === 'string'
+      ) {
+        message = parsed.message;
+      }
+    } catch {
+      // Keep the original response text.
+    }
+
+    throw new HttpException(
+      `GitHub ${operation} failed: ${message}`,
+      response.status,
+    );
+  }
+
   async listBranches() {
     const url =
       `https://api.github.com/repos/` +
@@ -67,10 +95,9 @@ export class GitHubApiService {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-
-      throw new InternalServerErrorException(
-        `GitHub API request failed (${response.status}): ${errorText}`,
+      return this.handleGitHubError(
+        response,
+        'branch listing',
       );
     }
 
@@ -103,11 +130,9 @@ export class GitHubApiService {
     );
 
     if (!sourceResponse.ok) {
-      const errorText =
-        await sourceResponse.text();
-
-      throw new InternalServerErrorException(
-        `GitHub source branch lookup failed (${sourceResponse.status}): ${errorText}`,
+      return this.handleGitHubError(
+        sourceResponse,
+        'source branch lookup',
       );
     }
 
@@ -141,10 +166,9 @@ export class GitHubApiService {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-
-      throw new InternalServerErrorException(
-        `GitHub branch creation failed (${response.status}): ${errorText}`,
+      return this.handleGitHubError(
+        response,
+        'branch creation',
       );
     }
 
