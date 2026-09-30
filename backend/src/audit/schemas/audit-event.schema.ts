@@ -1,14 +1,16 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
-export type AuditEventDocument = HydratedDocument<AuditEvent>;
+export type AuditEventDocument =
+  HydratedDocument<AuditEvent>;
 
 export type AuditEventType =
   | 'BLOCKED'
   | 'APPROVAL_REQUIRED'
   | 'APPROVED'
   | 'REJECTED'
-  | 'EXECUTED';
+  | 'EXECUTED'
+  | 'EXECUTION_FAILED';
 
 @Schema({
   timestamps: true,
@@ -47,6 +49,7 @@ export class AuditEvent {
       'APPROVED',
       'REJECTED',
       'EXECUTED',
+      'EXECUTION_FAILED',
     ],
   })
   event: AuditEventType;
