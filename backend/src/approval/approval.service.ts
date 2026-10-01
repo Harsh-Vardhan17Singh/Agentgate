@@ -64,7 +64,7 @@ export class ApprovalService {
     return approval;
   }
 
-  approve(id: string) {
+  async approve(id: string) {
   const approval = this.getApproval(id);
 
   if (approval.status !== 'PENDING') {
@@ -88,26 +88,45 @@ export class ApprovalService {
     event: 'APPROVED',
   });
 
-  const result = this.executive.execute(approval.request);
 
-  this.auditService.record({
-    agentId: approval.request.agentId,
-    tool: approval.request.tool,
-    operation: approval.request.operation,
-    target: approval.request.target,
-    decision: 'APPROVED',
-    riskScore: approval.risk.score,
-    riskLevel: approval.risk.level,
-    executed: true,
-    event: 'EXECUTED',
-  });
+  try {
+    const result = await this.executive.execute(
+      approval.request,
+    );
 
-  return {
-    approval,
-    executed: true,
-    result,
-    message: 'Approval granted and tool executed.',
-  };
+    await this.auditService.record({
+      agentId: approval.request.agentId,
+      tool: approval.request.tool,
+      operation: approval.request.operation,
+      target: approval.request.target,
+      decision: 'APPROVED',
+      riskScore: approval.risk.score,
+      riskLevel: approval.risk.level,
+      executed: true,
+      event: 'EXECUTED',
+    });
+
+    return {
+      approval,
+      executed: true,
+      result,
+      message: 'Approval granted and tool executed.',
+    };
+  } catch (error) {
+    await this.auditService.record({
+      agentId: approval.request.agentId,
+      tool: approval.request.tool,
+      operation: approval.request.operation,
+      target: approval.request.target,
+      decision: 'APPROVED',
+      riskScore: approval.risk.score,
+      riskLevel: approval.risk.level,
+      executed: false,
+      event: 'EXECUTION_FAILED',
+    });
+
+    throw error;
+  }
 }
 
   reject(id: string): ApprovalRequest {
