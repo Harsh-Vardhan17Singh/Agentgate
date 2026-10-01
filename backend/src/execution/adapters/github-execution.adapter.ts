@@ -2,6 +2,7 @@ import {
   Injectable,
   BadRequestException,
   ForbiddenException,
+  NotImplementedException,
 } from '@nestjs/common';
 
 import { ToolCallDto } from '../../gateway/dto/tool-call.dto';
@@ -150,16 +151,8 @@ export class GitHubExecutionAdapter
       };
     }
 
-    return {
-      tool: request.tool,
-      operation: request.operation,
-      target: request.target,
-      status: 'FAILED',
-      simulated: true,
-      executedAt: new Date().toISOString(),
-      error:
-        `GitHub operation '${request.operation}' ` +
-        'is not implemented yet.',
-    };
+    throw new NotImplementedException(
+  `GitHub operation '${request.operation}' is not implemented yet.`,
+);
   }
 }
