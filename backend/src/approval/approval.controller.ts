@@ -3,10 +3,13 @@ import {
   Get,
   Param,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 
 import { ApprovalService } from './approval.service';
+import { ReviewerAuthGuard } from '../auth/reviewer-auth.guard';
 
+@UseGuards(ReviewerAuthGuard)
 @Controller('approval')
 export class ApprovalController {
   constructor(

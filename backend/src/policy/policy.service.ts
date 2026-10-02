@@ -25,6 +25,14 @@ export class PolicyService {
       return 'BLOCK';
     }
 
+    // Deleting a GitHub branch always requires human approval.
+if (
+  normalizedTool === 'github' &&
+  normalizedOperation === 'delete_branch'
+) {
+  return 'REQUIRE_APPROVAL';
+}
+
     // Sending an email requires human approval.
     if (
       normalizedTool === 'email' &&
