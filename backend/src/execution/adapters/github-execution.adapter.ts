@@ -151,6 +151,45 @@ export class GitHubExecutionAdapter
       };
     }
 
+        if (request.operation === 'delete_branch') {
+      const argumentsObject = request.arguments;
+
+      if (!argumentsObject) {
+        throw new BadRequestException(
+          'GitHub delete_branch requires arguments.',
+        );
+      }
+
+      const branch = argumentsObject.branch;
+
+      if (
+        typeof branch !== 'string' ||
+        branch.trim() === ''
+      ) {
+        throw new BadRequestException(
+          'GitHub delete_branch requires a valid branch argument.',
+        );
+      }
+
+      const result =
+        await this.githubApiService.deleteBranch(
+          branch.trim(),
+        );
+
+      return {
+        tool: request.tool,
+        operation: request.operation,
+        target: request.target,
+        status: 'SUCCESS',
+        simulated: false,
+        executedAt: new Date().toISOString(),
+        data: {
+          branch: branch.trim(),
+          github: result,
+        },
+      };
+    }
+
     throw new NotImplementedException(
   `GitHub operation '${request.operation}' is not implemented yet.`,
 );
