@@ -37,10 +37,18 @@ export class AuthorizationService {
       );
     }
 
-    const requiredPermission = `${tool}:${operation}`;
+    const normalizedTool = tool.trim().toLowerCase();
+    const normalizedOperation =
+      operation.trim().toLowerCase();
 
-    return agent.permissions.includes(
-      requiredPermission,
+    const requiredPermission =
+      `${normalizedTool}:${normalizedOperation}`;
+
+    const permissions = agent.permissions.map(
+      (permission) =>
+        permission.trim().toLowerCase(),
     );
+
+    return permissions.includes(requiredPermission);
   }
 }
