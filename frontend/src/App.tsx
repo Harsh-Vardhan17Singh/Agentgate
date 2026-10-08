@@ -1,43 +1,19 @@
+import { useState } from 'react';
+
+import Sidebar from './components/Sidebar';
+
 function App() {
+  const [activeItem, setActiveItem] =
+    useState('Overview');
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <div className="flex min-h-screen">
-        {/* Sidebar */}
-        <aside className="w-64 border-r border-slate-800 bg-slate-950 p-5">
-          <div className="mb-10">
-            <h1 className="text-xl font-bold tracking-tight">
-              AgentGate
-            </h1>
+        <Sidebar
+          activeItem={activeItem}
+          onItemChange={setActiveItem}
+        />
 
-            <p className="mt-1 text-xs text-slate-500">
-              AI Security Gateway
-            </p>
-          </div>
-
-          <nav className="space-y-2">
-            <button className="w-full rounded-lg bg-slate-800 px-4 py-3 text-left text-sm font-medium">
-              Overview
-            </button>
-
-            <button className="w-full rounded-lg px-4 py-3 text-left text-sm text-slate-400 hover:bg-slate-900 hover:text-white">
-              Requests
-            </button>
-
-            <button className="w-full rounded-lg px-4 py-3 text-left text-sm text-slate-400 hover:bg-slate-900 hover:text-white">
-              Approvals
-            </button>
-
-            <button className="w-full rounded-lg px-4 py-3 text-left text-sm text-slate-400 hover:bg-slate-900 hover:text-white">
-              Audit Logs
-            </button>
-
-            <button className="w-full rounded-lg px-4 py-3 text-left text-sm text-slate-400 hover:bg-slate-900 hover:text-white">
-              Agents
-            </button>
-          </nav>
-        </aside>
-
-        {/* Main content */}
         <main className="flex-1 p-8">
           <header className="mb-8">
             <div className="flex items-center justify-between">
@@ -47,7 +23,7 @@ function App() {
                 </p>
 
                 <h2 className="mt-1 text-3xl font-semibold">
-                  Overview
+                  {activeItem}
                 </h2>
               </div>
 
@@ -58,7 +34,6 @@ function App() {
             </div>
           </header>
 
-          {/* Stats */}
           <section className="grid gap-4 md:grid-cols-3">
             <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
               <p className="text-sm text-slate-500">
@@ -91,7 +66,6 @@ function App() {
             </div>
           </section>
 
-          {/* Recent activity */}
           <section className="mt-8 rounded-xl border border-slate-800 bg-slate-900">
             <div className="border-b border-slate-800 p-5">
               <h3 className="font-semibold">
