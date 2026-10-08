@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import Sidebar from './components/Sidebar';
 import {
   getAuditLogs,
+  getPendingApprovals,
+  type ApprovalRequest,
   type AuditEvent,
 } from './services/api';
 
@@ -14,38 +16,55 @@ function App() {
     AuditEvent[]
   >([]);
 
-  const [auditLoading, setAuditLoading] =
-    useState(false);
+  const [pendingApprovals, setPendingApprovals] =
+    useState<ApprovalRequest[]>([]);
 
-  const [auditError, setAuditError] =
-    useState('');
+  const [loading, setLoading] = useState(false);
+
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    if (activeItem !== 'Audit Logs') {
-      return;
-    }
-
-    async function loadAuditLogs() {
+    async function loadDashboardData() {
       try {
-        setAuditLoading(true);
-        setAuditError('');
+        setLoading(true);
+        setError('');
 
-        const logs = await getAuditLogs();
+        const [logs, approvals] =
+          await Promise.all([
+            getAuditLogs(),
+            getPendingApprovals(),
+          ]);
 
         setAuditLogs(logs);
+        setPendingApprovals(approvals);
       } catch (error) {
         console.error(error);
 
-        setAuditError(
-          'Unable to load audit logs.',
+        setError(
+          'Unable to load AgentGate data.',
         );
       } finally {
-        setAuditLoading(false);
+        setLoading(false);
       }
     }
 
-    loadAuditLogs();
-  }, [activeItem]);
+    loadDashboardData();
+  }, []);
+
+  const uniqueRequests = new Set(
+    auditLogs.map(
+      (log) =>
+        `${log.agentId}:${log.tool}:${log.operation}:${log.target}`,
+    ),
+  );
+
+  const totalRequests = uniqueRequests.size;
+
+  const blockedActions = auditLogs.filter(
+    (log) => log.event === 'BLOCKED',
+  ).length;
+
+  const recentLogs = auditLogs.slice(0, 10);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -87,28 +106,28 @@ function App() {
                 </p>
               </div>
 
-              {auditLoading && (
+              {loading && (
                 <div className="p-6 text-sm text-slate-400">
                   Loading audit logs...
                 </div>
               )}
 
-              {auditError && (
+              {error && (
                 <div className="p-6 text-sm text-red-400">
-                  {auditError}
+                  {error}
                 </div>
               )}
 
-              {!auditLoading &&
-                !auditError &&
+              {!loading &&
+                !error &&
                 auditLogs.length === 0 && (
                   <div className="p-6 text-sm text-slate-400">
                     No audit events found.
                   </div>
                 )}
 
-              {!auditLoading &&
-                !auditError &&
+              {!loading &&
+                !error &&
                 auditLogs.length > 0 && (
                   <div className="divide-y divide-slate-800">
                     {auditLogs.map((log, index) => {
@@ -141,17 +160,17 @@ function App() {
 
                           <span
                             className={`shrink-0 rounded-full px-3 py-1 text-xs ${
-                              log.decision === 'EXECUTED'
+                              log.event === 'EXECUTED'
                                 ? 'bg-emerald-500/10 text-emerald-400'
-                                : log.decision === 'BLOCKED'
+                                : log.event === 'BLOCKED'
                                   ? 'bg-red-500/10 text-red-400'
-                                  : log.decision ===
+                                  : log.event ===
                                       'APPROVAL_REQUIRED'
                                     ? 'bg-amber-500/10 text-amber-400'
                                     : 'bg-blue-500/10 text-blue-400'
                             }`}
                           >
-                            {log.decision}
+                            {log.event || log.decision}
                           </span>
                         </div>
                       );
@@ -161,6 +180,12 @@ function App() {
             </section>
           ) : (
             <>
+              {error && (
+                <div className="mb-6 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
+                  {error}
+                </div>
+              )}
+
               <section className="grid gap-4 md:grid-cols-3">
                 <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
                   <p className="text-sm text-slate-500">
@@ -168,7 +193,7 @@ function App() {
                   </p>
 
                   <p className="mt-2 text-3xl font-semibold">
-                    24
+                    {loading ? '...' : totalRequests}
                   </p>
                 </div>
 
@@ -178,7 +203,9 @@ function App() {
                   </p>
 
                   <p className="mt-2 text-3xl font-semibold text-amber-400">
-                    2
+                    {loading
+                      ? '...'
+                      : pendingApprovals.length}
                   </p>
                 </div>
 
@@ -188,7 +215,7 @@ function App() {
                   </p>
 
                   <p className="mt-2 text-3xl font-semibold text-red-400">
-                    3
+                    {loading ? '...' : blockedActions}
                   </p>
                 </div>
               </section>
@@ -204,55 +231,68 @@ function App() {
                   </p>
                 </div>
 
-                <div className="divide-y divide-slate-800">
-                  <div className="flex items-center justify-between p-5">
-                    <div>
-                      <p className="font-medium">
-                        GitHub · delete_branch
-                      </p>
-
-                      <p className="mt-1 text-sm text-slate-500">
-                        admin-agent → Silent-Driver-Grand-Plix-
-                      </p>
-                    </div>
-
-                    <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs text-emerald-400">
-                      EXECUTED
-                    </span>
+                {loading && (
+                  <div className="p-6 text-sm text-slate-400">
+                    Loading activity...
                   </div>
+                )}
 
-                  <div className="flex items-center justify-between p-5">
-                    <div>
-                      <p className="font-medium">
-                        GitHub · delete_branch
-                      </p>
-
-                      <p className="mt-1 text-sm text-slate-500">
-                        admin-agent → approval required
-                      </p>
+                {!loading &&
+                  recentLogs.length === 0 && (
+                    <div className="p-6 text-sm text-slate-400">
+                      No recent activity.
                     </div>
+                  )}
 
-                    <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs text-amber-400">
-                      APPROVAL
-                    </span>
-                  </div>
+                {!loading &&
+                  recentLogs.length > 0 && (
+                    <div className="divide-y divide-slate-800">
+                      {recentLogs.map(
+                        (log, index) => {
+                          const timestamp =
+                            log.timestamp ||
+                            log.createdAt;
 
-                  <div className="flex items-center justify-between p-5">
-                    <div>
-                      <p className="font-medium">
-                        GitHub · list_branches
-                      </p>
+                          return (
+                            <div
+                              key={`${timestamp}-${index}`}
+                              className="flex items-center justify-between gap-6 p-5"
+                            >
+                              <div>
+                                <p className="font-medium">
+                                  {log.tool} ·{' '}
+                                  {log.operation}
+                                </p>
 
-                      <p className="mt-1 text-sm text-slate-500">
-                        admin-agent → low risk operation
-                      </p>
+                                <p className="mt-1 text-sm text-slate-500">
+                                  {log.agentId} →{' '}
+                                  {log.target}
+                                </p>
+                              </div>
+
+                              <span
+                                className={`shrink-0 rounded-full px-3 py-1 text-xs ${
+                                  log.event ===
+                                  'EXECUTED'
+                                    ? 'bg-emerald-500/10 text-emerald-400'
+                                    : log.event ===
+                                        'BLOCKED'
+                                      ? 'bg-red-500/10 text-red-400'
+                                      : log.event ===
+                                          'APPROVAL_REQUIRED'
+                                        ? 'bg-amber-500/10 text-amber-400'
+                                        : 'bg-blue-500/10 text-blue-400'
+                                }`}
+                              >
+                                {log.event ||
+                                  log.decision}
+                              </span>
+                            </div>
+                          );
+                        },
+                      )}
                     </div>
-
-                    <span className="rounded-full bg-blue-500/10 px-3 py-1 text-xs text-blue-400">
-                      ALLOWED
-                    </span>
-                  </div>
-                </div>
+                  )}
               </section>
             </>
           )}

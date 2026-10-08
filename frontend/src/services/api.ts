@@ -14,26 +14,71 @@ export interface AuditEvent {
   riskLevel?: string;
   riskScore?: number;
   executed?: boolean;
+  event?: string;
   timestamp?: string;
   createdAt?: string;
   [key: string]: unknown;
 }
 
+export interface ApprovalRequest {
+  id: string;
+  request: {
+    agentId: string;
+    tool: string;
+    operation: string;
+    target: string;
+  };
+  risk: {
+    score: number;
+    level: string;
+  };
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  executionStatus:
+    | 'NOT_EXECUTED'
+    | 'EXECUTED'
+    | 'FAILED';
+  createdAt: string;
+  reviewedAt?: string;
+  executedAt?: string;
+}
+
+const reviewerHeaders: Record<string, string> =
+  REVIEWER_KEY
+    ? {
+        'x-reviewer-key': REVIEWER_KEY,
+      }
+    : {};
+    
 export async function getAuditLogs(): Promise<AuditEvent[]> {
   const response = await fetch(
     `${API_BASE_URL}/audit`,
     {
-      headers: REVIEWER_KEY
-        ? {
-            'x-reviewer-key': REVIEWER_KEY,
-          }
-        : {},
+      headers: reviewerHeaders,
     },
   );
 
   if (!response.ok) {
     throw new Error(
       `Failed to fetch audit logs: ${response.status}`,
+    );
+  }
+
+  return response.json();
+}
+
+export async function getPendingApprovals(): Promise<
+  ApprovalRequest[]
+> {
+  const response = await fetch(
+    `${API_BASE_URL}/approval/pending`,
+    {
+      headers: reviewerHeaders,
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch pending approvals: ${response.status}`,
     );
   }
 
