@@ -20,6 +20,28 @@ export interface AuditEvent {
   [key: string]: unknown;
 }
 
+export interface Agent {
+  agentId: string;
+  name: string;
+  active: boolean;
+  permissions: string[];
+  createdAt?: string;
+}
+
+export async function getAgents(): Promise<Agent[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/agents`,
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch agents: ${response.status}`,
+    );
+  }
+
+  return response.json();
+}
+
 export interface ApprovalRequest {
   id: string;
   request: {

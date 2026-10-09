@@ -4,6 +4,8 @@ import Sidebar from './components/Sidebar';
 import {
   getAuditLogs,
   getPendingApprovals,
+  getAgents,
+  type Agent,
   type ApprovalRequest,
   type AuditEvent,
 } from './services/api';
@@ -18,6 +20,10 @@ function App() {
 
   const [pendingApprovals, setPendingApprovals] =
     useState<ApprovalRequest[]>([]);
+  
+  const [agents, setAgents] = useState<Agent[]>([]);
+const [agentsLoading, setAgentsLoading] = useState(false);
+const [agentsError, setAgentsError] = useState('');
 
   const [loading, setLoading] = useState(false);
 
@@ -52,6 +58,25 @@ function App() {
 
     loadDashboardData();
   }, []);
+
+  useEffect(() => {
+  async function loadAgents() {
+    try {
+      setAgentsLoading(true);
+      setAgentsError('');
+
+      const data = await getAgents();
+      setAgents(data);
+    } catch (error) {
+      console.error('Failed to load agents:', error);
+      setAgentsError('Unable to load registered agents.');
+    } finally {
+      setAgentsLoading(false);
+    }
+  }
+
+  loadAgents();
+}, []);
 
   const uniqueRequests = new Set(
     auditLogs.map(
@@ -315,8 +340,81 @@ function App() {
                   </div>
                 )}
             </section>
-          ) : (
-            <>
+          )  : activeItem === 'Agents' ? (
+  <section className="rounded-xl border border-slate-800 bg-slate-900">
+    <div className="border-b border-slate-800 p-5">
+      <h3 className="font-semibold">Registered Agents</h3>
+      <p className="mt-1 text-sm text-slate-500">
+        Agents registered with the AgentGate gateway
+      </p>
+    </div>
+
+    {agentsLoading && (
+      <p className="p-6 text-sm text-slate-400">
+        Loading registered agents...
+      </p>
+    )}
+
+    {!agentsLoading && agentsError && (
+      <p className="p-6 text-sm text-red-400">
+        {agentsError}
+      </p>
+    )}
+
+    {!agentsLoading && !agentsError && agents.length === 0 && (
+      <p className="p-6 text-sm text-slate-400">
+        No agents registered yet.
+      </p>
+    )}
+
+    {!agentsLoading && !agentsError && agents.length > 0 && (
+      <div className="divide-y divide-slate-800">
+        {agents.map((agent) => (
+          <div
+            key={agent.agentId}
+            className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div className="min-w-0">
+              <h4 className="font-medium">{agent.name}</h4>
+
+              <p className="mt-1 break-all text-sm text-slate-500">
+                ID: {agent.agentId}
+              </p>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {agent.permissions.map((permission) => (
+                  <span
+                    key={permission}
+                    className="rounded-md bg-slate-800 px-2 py-1 text-xs text-slate-300"
+                  >
+                    {permission}
+                  </span>
+                ))}
+
+                {agent.permissions.length === 0 && (
+                  <span className="text-xs text-slate-500">
+                    No permissions assigned
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <span
+              className={`w-fit rounded-full px-3 py-1 text-xs ${
+                agent.active
+                  ? 'bg-emerald-500/10 text-emerald-400'
+                  : 'bg-red-500/10 text-red-400'
+              }`}
+            >
+              {agent.active ? 'Active' : 'Inactive'}
+            </span>
+          </div>
+        ))}
+      </div>
+    )}
+  </section>
+) : (
+  <>
               {error && (
                 <div className="mb-6 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
                   {error}
