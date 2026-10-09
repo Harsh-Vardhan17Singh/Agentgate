@@ -23,6 +23,8 @@ function App() {
 
   const [error, setError] = useState('');
 
+  const [requestFilter, setRequestFilter] = useState('ALL');
+
   useEffect(() => {
     async function loadDashboardData() {
       try {
@@ -66,6 +68,26 @@ function App() {
 
   const recentLogs = auditLogs.slice(0, 10);
 
+  const filteredRequests = auditLogs.filter((log) => {
+  if (requestFilter === 'ALL') {
+    return true;
+  }
+
+  if (requestFilter === 'EXECUTED') {
+    return log.event === 'EXECUTED';
+  }
+
+  if (requestFilter === 'APPROVAL_REQUIRED') {
+    return log.event === 'APPROVAL_REQUIRED';
+  }
+
+  if (requestFilter === 'BLOCKED') {
+    return log.event === 'BLOCKED';
+  }
+
+  return true;
+});
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <div className="flex min-h-screen">
@@ -94,7 +116,122 @@ function App() {
             </div>
           </header>
 
-          {activeItem === 'Audit Logs' ? (
+          {activeItem === 'Requests' ? (
+  <section className="rounded-xl border border-slate-800 bg-slate-900">
+    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 p-5">
+      <div>
+        <h3 className="font-semibold">
+          Tool Request Activity
+        </h3>
+
+        <p className="mt-1 text-sm text-slate-500">
+          Recorded security events from AgentGate
+        </p>
+      </div>
+
+      <select
+        value={requestFilter}
+        onChange={(event) =>
+          setRequestFilter(event.target.value)
+        }
+        className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 outline-none focus:border-blue-500"
+      >
+        <option value="ALL">All events</option>
+        <option value="EXECUTED">Executed</option>
+        <option value="APPROVAL_REQUIRED">
+          Approval required
+        </option>
+        <option value="BLOCKED">Blocked</option>
+      </select>
+    </div>
+
+    {loading && (
+      <div className="p-6 text-sm text-slate-400">
+        Loading request activity...
+      </div>
+    )}
+
+    {!loading && error && (
+      <div className="p-6 text-sm text-red-400">
+        {error}
+      </div>
+    )}
+
+    {!loading &&
+      !error &&
+      filteredRequests.length === 0 && (
+        <div className="p-6 text-sm text-slate-400">
+          No events match this filter.
+        </div>
+      )}
+
+    {!loading &&
+      !error &&
+      filteredRequests.length > 0 && (
+        <div className="divide-y divide-slate-800">
+          {filteredRequests.map((log, index) => {
+            const timestamp =
+              log.timestamp || log.createdAt;
+
+            const event = log.event || log.decision;
+
+            const badgeClass =
+              event === 'EXECUTED'
+                ? 'bg-emerald-500/10 text-emerald-400'
+                : event === 'BLOCKED'
+                  ? 'bg-red-500/10 text-red-400'
+                  : event === 'APPROVAL_REQUIRED'
+                    ? 'bg-amber-500/10 text-amber-400'
+                    : 'bg-blue-500/10 text-blue-400';
+
+            return (
+              <div
+                key={`${timestamp}-${index}`}
+                className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium">
+                    {log.tool} · {log.operation}
+                  </p>
+
+                  <p className="mt-1 break-all text-sm text-slate-400">
+                    {log.agentId} → {log.target}
+                  </p>
+
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                    <span className="rounded-md bg-slate-800 px-2 py-1 text-slate-300">
+                      Risk: {log.riskLevel ?? 'Unknown'}
+                      {typeof log.riskScore === 'number'
+                        ? ` (${log.riskScore})`
+                        : ''}
+                    </span>
+
+                    <span className="rounded-md bg-slate-800 px-2 py-1 text-slate-300">
+                      {log.executed
+                        ? 'Executed: Yes'
+                        : 'Executed: No'}
+                    </span>
+                  </div>
+
+                  {timestamp && (
+                    <p className="mt-2 text-xs text-slate-500">
+                      {new Date(timestamp).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+
+                <span
+                  className={`w-fit rounded-full px-3 py-1 text-xs ${badgeClass}`}
+                >
+                  {event}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+  </section>
+) : activeItem === 'Audit Logs' ?  (
             <section className="rounded-xl border border-slate-800 bg-slate-900">
               <div className="border-b border-slate-800 p-5">
                 <h3 className="font-semibold">
