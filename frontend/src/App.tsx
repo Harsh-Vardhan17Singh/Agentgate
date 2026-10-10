@@ -5,6 +5,8 @@ import {
   getAuditLogs,
   getPendingApprovals,
   getAgents,
+  approveRequest,
+  rejectRequest,
   type Agent,
   type ApprovalRequest,
   type AuditEvent,
@@ -20,6 +22,10 @@ function App() {
 
   const [pendingApprovals, setPendingApprovals] =
     useState<ApprovalRequest[]>([]);
+
+  const [ approvalActionId,setApprovalActionId] = useState('');
+  const [approvalError, setApprovalError] = useState('');
+  const [ approvalMessage, setApprovalMessage] = useState('');
   
   const [agents, setAgents] = useState<Agent[]>([]);
 const [agentsLoading, setAgentsLoading] = useState(false);
@@ -77,6 +83,60 @@ const [agentsError, setAgentsError] = useState('');
 
   loadAgents();
 }, []);
+
+async function handleApprove(id: string) {
+  const confirmed = window.confirm(
+    'Approving this request may execute the requested tool. Continue?',
+  );
+
+  if (!confirmed) return;
+
+  try {
+    setApprovalActionId(id);
+    setApprovalError('');
+    setApprovalMessage('');
+
+    const result = await approveRequest(id);
+
+    setApprovalMessage(result.message);
+
+    const approvals = await getPendingApprovals();
+    setPendingApprovals(approvals);
+  } catch (error) {
+    console.error(error);
+    setApprovalError(
+      error instanceof Error
+        ? error.message
+        : 'Failed to approve request.',
+    );
+  } finally {
+    setApprovalActionId('');
+  }
+}
+
+async function handleReject(id: string) {
+  try {
+    setApprovalActionId(id);
+    setApprovalError('');
+    setApprovalMessage('');
+
+    await rejectRequest(id);
+
+    setApprovalMessage('Request rejected successfully.');
+
+    const approvals = await getPendingApprovals();
+    setPendingApprovals(approvals);
+  } catch (error) {
+    console.error(error);
+    setApprovalError(
+      error instanceof Error
+        ? error.message
+        : 'Failed to reject request.',
+    );
+  } finally {
+    setApprovalActionId('');
+  }
+}
 
   const uniqueRequests = new Set(
     auditLogs.map(
@@ -340,6 +400,91 @@ const [agentsError, setAgentsError] = useState('');
                   </div>
                 )}
             </section>
+
+          ) : activeItem === 'Approvals' ? (
+  <section className="rounded-xl border border-slate-800 bg-slate-900">
+    <div className="border-b border-slate-800 p-5">
+      <h3 className="font-semibold">Pending Approvals</h3>
+      <p className="mt-1 text-sm text-slate-500">
+        Review requests before allowing tool execution.
+      </p>
+    </div>
+
+    {approvalError && (
+      <p className="p-5 text-sm text-red-400">{approvalError}</p>
+    )}
+
+    {approvalMessage && (
+      <p className="p-5 text-sm text-emerald-400">
+        {approvalMessage}
+      </p>
+    )}
+
+    {loading && (
+      <p className="p-5 text-sm text-slate-400">
+        Loading approvals...
+      </p>
+    )}
+
+    {!loading && pendingApprovals.length === 0 && (
+      <p className="p-5 text-sm text-slate-400">
+        No pending approvals.
+      </p>
+    )}
+
+    {!loading && pendingApprovals.map((approval) => (
+      <div
+        key={approval.id}
+        className="border-b border-slate-800 p-5"
+      >
+        <div className="flex flex-col justify-between gap-4 sm:flex-row">
+          <div>
+            <h4 className="font-medium">
+              {approval.request.tool} · {approval.request.operation}
+            </h4>
+
+            <p className="mt-1 break-all text-sm text-slate-400">
+              Agent: {approval.request.agentId}
+            </p>
+
+            <p className="mt-1 break-all text-sm text-slate-400">
+              Target: {approval.request.target}
+            </p>
+
+            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+              <span className="rounded-md bg-slate-800 px-2 py-1">
+                Risk: {approval.risk.level}
+              </span>
+              <span className="rounded-md bg-slate-800 px-2 py-1">
+                Score: {approval.risk.score}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex h-fit gap-2">
+            <button
+              disabled={approvalActionId !== ''}
+              onClick={() => handleApprove(approval.id)}
+              className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {approvalActionId === approval.id
+                ? 'Processing...'
+                : 'Approve & Execute'}
+            </button>
+
+            <button
+              disabled={approvalActionId !== ''}
+              onClick={() => handleReject(approval.id)}
+              className="rounded-lg border border-red-500/30 px-3 py-2 text-sm font-medium text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Reject
+            </button>
+          </div>
+        </div>
+      </div>
+    ))}
+  </section>
+    
           )  : activeItem === 'Agents' ? (
   <section className="rounded-xl border border-slate-800 bg-slate-900">
     <div className="border-b border-slate-800 p-5">
