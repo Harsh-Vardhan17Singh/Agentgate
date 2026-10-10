@@ -106,3 +106,48 @@ export async function getPendingApprovals(): Promise<
 
   return response.json();
 }
+
+export async function approveRequest(
+  id: string,
+): Promise<{
+  approval: ApprovalRequest;
+  executed: boolean;
+  result?: unknown;
+  message: string;
+}> {
+  const response = await fetch(
+    `${API_BASE_URL}/approval/${encodeURIComponent(id)}/approve`,
+    {
+      method: 'POST',
+      headers: reviewerHeaders,
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to approve request: ${response.status}`,
+    );
+  }
+
+  return response.json();
+}
+
+export async function rejectRequest(
+  id: string,
+): Promise<ApprovalRequest> {
+  const response = await fetch(
+    `${API_BASE_URL}/approval/${encodeURIComponent(id)}/reject`,
+    {
+      method: 'POST',
+      headers: reviewerHeaders,
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to reject request: ${response.status}`,
+    );
+  }
+
+  return response.json();
+}
