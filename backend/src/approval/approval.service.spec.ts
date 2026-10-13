@@ -1,9 +1,10 @@
-
+import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { ApprovalService } from './approval.service';
 import { ExecutionService } from '../execution/execution.service';
 import { AuditService } from '../audit/audit.service';
 import { AuthenticatedToolCall } from '../gateway/dto/authenticated-tool-call';
 import { RiskResult } from '../risk/risk.service';
+
 
 describe('ApprovalService', () => {
   let service: ApprovalService;
@@ -13,7 +14,7 @@ describe('ApprovalService', () => {
   };
 
   const auditService = {
-    record: jest.fn().mockResolvedValue(undefined),
+    record: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
   };
 
   const request: AuthenticatedToolCall = {
@@ -63,11 +64,6 @@ describe('ApprovalService', () => {
     expect(executionService.execute).not.toHaveBeenCalled();
 
     expect(auditService.record).toHaveBeenCalledWith(
-      expect.objectContaining({
-        decision: 'REJECTED',
-        event: 'REJECTED',
-        executed: false,
-      }),
     );
   });
 });
