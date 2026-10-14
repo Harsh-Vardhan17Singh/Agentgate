@@ -63,7 +63,14 @@ describe('ApprovalService', () => {
     expect(service.getPendingApprovals()).toHaveLength(0);
     expect(executionService.execute).not.toHaveBeenCalled();
 
-    expect(auditService.record).toHaveBeenCalledWith(
-    );
+    
+expect(auditService.record).toHaveBeenCalledWith(
+  expect.objectContaining({
+    decision: 'REJECTED',
+    event: 'REJECTED',
+    executed: false,
+  }),
+);
+
   });
 });
