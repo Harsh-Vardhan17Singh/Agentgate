@@ -6,6 +6,7 @@ import { AuthenticatedToolCall } from '../gateway/dto/authenticated-tool-call';
 import { RiskResult } from '../risk/risk.service';
 
 
+
 describe('ApprovalService', () => {
   let service: ApprovalService;
 
@@ -64,13 +65,13 @@ describe('ApprovalService', () => {
     expect(executionService.execute).not.toHaveBeenCalled();
 
     
-expect(auditService.record).toHaveBeenCalledWith(
-  expect.objectContaining({
-    decision: 'REJECTED',
-    event: 'REJECTED',
-    executed: false,
-  }),
-);
+const recordedEvent = auditService.record.mock.calls[0][0];
+
+expect(recordedEvent).toMatchObject({
+  decision: 'REJECTED',
+  event: 'REJECTED',
+  executed: false,
+});
 
   });
 });
