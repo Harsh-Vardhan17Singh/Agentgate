@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { jest } from '@jest/globals';
 import { ApprovalController } from './approval.controller.js';
+import { ReviewerAuthGuard } from '../auth/reviewer-auth.guard.js';
+import { ConfigService } from '@nestjs/config';
+import { ApprovalService } from './approval.service.js';
 
 describe('ApprovalController', () => {
   let controller: ApprovalController;
@@ -7,7 +11,22 @@ describe('ApprovalController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ApprovalController],
-    }).compile();
+      providers: [
+        {
+          provide: ApprovalService,
+          useValue: {},
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn(),
+          },
+        },
+      ],
+    })
+      .overrideGuard(ReviewerAuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<ApprovalController>(ApprovalController);
   });
