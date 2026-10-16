@@ -1,16 +1,16 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
-import { AuthService } from './auth.service';
-import { AuthorizationService } from './authorization.service';
-import { AgentService } from './agent.service';
-import { AgentSeedService } from './agent-seed.service';
-import { AgentController } from './agent.controller';
+import { AuthService } from './auth.service.js';
+import { AuthorizationService } from './authorization.service.js';
+import { AgentService } from './agent.service.js';
+import { AgentSeedService } from './agent-seed.service.js';
+import { AgentController } from './agent.controller.js';
 
 import {
   Agent,
   AgentSchema,
-} from './schemas/agent.schema';
+} from './schemas/agent.schema.js';
 
 @Module({
   imports: [

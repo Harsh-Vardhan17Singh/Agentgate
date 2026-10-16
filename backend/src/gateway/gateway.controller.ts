@@ -5,10 +5,10 @@ import {
   Post,
 } from '@nestjs/common';
 
-import { GatewayService } from './gateway.service';
-import { ToolCallDto } from './dto/tool-call.dto';
-import { AuthenticatedToolCall } from './dto/authenticated-tool-call';
-import { AuthService } from '../auth/auth.service';
+import { GatewayService } from './gateway.service.js';
+import { ToolCallDto } from './dto/tool-call.dto.js';
+import { AuthenticatedToolCall } from './dto/authenticated-tool-call.js';
+import { AuthService } from '../auth/auth.service.js';
 
 @Controller('gateway')
 export class GatewayController {

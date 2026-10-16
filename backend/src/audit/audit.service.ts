@@ -6,7 +6,7 @@ import {
   AuditEvent,
   AuditEventDocument,
   AuditEventType,
-} from './schemas/audit-event.schema';
+} from './schemas/audit-event.schema.js';
 
 export interface AuditEventInput {
   agentId: string;

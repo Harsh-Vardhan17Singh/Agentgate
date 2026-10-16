@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ToolDefinition } from '../tools/tools.service';
+import { ToolDefinition } from '../tools/tools.service.js';
 
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 

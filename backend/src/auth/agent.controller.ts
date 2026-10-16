@@ -5,7 +5,7 @@ import {
   Patch,
 } from '@nestjs/common';
 
-import { AgentService } from './agent.service';
+import { AgentService } from './agent.service.js';
 
 @Controller('agents')
 export class AgentController {

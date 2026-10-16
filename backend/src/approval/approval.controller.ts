@@ -6,8 +6,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import { ApprovalService } from './approval.service';
-import { ReviewerAuthGuard } from '../auth/reviewer-auth.guard';
+import { ApprovalService } from './approval.service.js';
+import { ReviewerAuthGuard } from '../auth/reviewer-auth.guard.js';
 
 @UseGuards(ReviewerAuthGuard)
 @Controller('approval')

@@ -4,10 +4,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { AuthenticatedToolCall } from '../gateway/dto/authenticated-tool-call';
-import { RiskResult } from '../risk/risk.service';
-import { AuditService } from '../audit/audit.service';
-import { ExecutionService } from '../execution/execution.service';
+import { AuthenticatedToolCall } from '../gateway/dto/authenticated-tool-call.js';
+import { RiskResult } from '../risk/risk.service.js';
+import { AuditService } from '../audit/audit.service.js';
+import { ExecutionService } from '../execution/execution.service.js';
 
 export type ApprovalStatus =
   | 'PENDING'

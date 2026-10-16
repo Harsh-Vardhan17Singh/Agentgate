@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
-import { AuditController } from './audit.controller';
-import { AuditService } from './audit.service';
+import { AuditController } from './audit.controller.js';
+import { AuditService } from './audit.service.js';
 
 import {
   AuditEvent,
   AuditEventSchema,
-} from './schemas/audit-event.schema';
+} from './schemas/audit-event.schema.js';
 
 @Module({
   imports: [

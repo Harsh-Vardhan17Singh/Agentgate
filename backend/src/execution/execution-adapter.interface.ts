@@ -1,4 +1,4 @@
-import { ToolCallDto } from '../gateway/dto/tool-call.dto';
+import { ToolCallDto } from '../gateway/dto/tool-call.dto.js';
 
 export interface ExecutionAdapter {
   supports(

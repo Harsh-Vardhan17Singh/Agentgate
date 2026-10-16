@@ -9,7 +9,7 @@ import { Model } from 'mongoose';
 import {
   Agent,
   AgentDocument,
-} from './schemas/agent.schema';
+} from './schemas/agent.schema.js';
 
 @Injectable()
 export class AgentService {

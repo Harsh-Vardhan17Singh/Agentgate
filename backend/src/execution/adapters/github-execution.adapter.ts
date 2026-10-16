@@ -5,14 +5,14 @@ import {
   NotImplementedException,
 } from '@nestjs/common';
 
-import { ToolCallDto } from '../../gateway/dto/tool-call.dto';
+import { ToolCallDto } from '../../gateway/dto/tool-call.dto.js';
 
 import {
   ExecutionAdapter,
   ExecutionAdapterResult,
-} from '../execution-adapter.interface';
+} from '../execution-adapter.interface.js';
 
-import { GitHubApiService } from '../github-api.service';
+import { GitHubApiService } from '../github-api.service.js';
 
 @Injectable()
 export class GitHubExecutionAdapter

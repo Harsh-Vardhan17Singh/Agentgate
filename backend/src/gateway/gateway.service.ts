@@ -3,14 +3,14 @@ import {
   Injectable,
 } from '@nestjs/common';
 
-import { PolicyService } from '../policy/policy.service';
-import { RiskService } from '../risk/risk.service';
-import { ToolsService } from '../tools/tools.service';
-import { AuthenticatedToolCall } from './dto/authenticated-tool-call';
-import { ApprovalService } from '../approval/approval.service';
-import { ExecutionService } from '../execution/execution.service';
-import { AuditService } from '../audit/audit.service';
-import { AuthorizationService } from '../auth/authorization.service';
+import { PolicyService } from '../policy/policy.service.js';
+import { RiskService } from '../risk/risk.service.js';
+import { ToolsService } from '../tools/tools.service.js';
+import { AuthenticatedToolCall } from './dto/authenticated-tool-call.js';
+import { ApprovalService } from '../approval/approval.service.js';
+import { ExecutionService } from '../execution/execution.service.js';
+import { AuditService } from '../audit/audit.service.js';
+import { AuthorizationService } from '../auth/authorization.service.js';
 
 @Injectable()
 export class GatewayService {

@@ -24,14 +24,17 @@ transform: {
     },
   ],
 },
-  moduleNameMapper: pathsToModuleNameMapper(paths, {
+  moduleNameMapper: {
+  '^(\\.{1,2}/.*)\\.js$': '$1',
+  ...pathsToModuleNameMapper(paths, {
     prefix: '<rootDir>/',
   }),
-  collectCoverageFrom: [
-    'src/**/*.(t|j)s',
-    'libs/**/*.(t|j)s',
-    'apps/**/*.(t|j)s',
-  ],
+},
+testPathIgnorePatterns: [
+  '/node_modules/',
+  '/dist/',
+  '/src-backup-before-esm-fix/',
+],
   coverageDirectory: './coverage',
   testEnvironment: 'node',
 };

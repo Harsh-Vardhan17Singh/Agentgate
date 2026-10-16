@@ -1,9 +1,9 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { ApprovalService } from './approval.service';
-import { ExecutionService } from '../execution/execution.service';
-import { AuditService } from '../audit/audit.service';
-import { AuthenticatedToolCall } from '../gateway/dto/authenticated-tool-call';
-import { RiskResult } from '../risk/risk.service';
+import { ApprovalService } from './approval.service.js';
+import { ExecutionService } from '../execution/execution.service.js';
+import { AuditService } from '../audit/audit.service.js';
+import { AuthenticatedToolCall } from '../gateway/dto/authenticated-tool-call.js';
+import { RiskResult } from '../risk/risk.service.js';
 
 
 

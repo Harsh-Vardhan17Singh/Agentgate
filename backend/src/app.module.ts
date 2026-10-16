@@ -1,18 +1,18 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { AppController } from './app.controller.js';
+import { AppService } from './app.service.js';
 
-import { GatewayModule } from './gateway/gateway.module';
-import { PolicyModule } from './policy/policy.module';
-import { RiskModule } from './risk/risk.module';
-import { ToolsModule } from './tools/tools.module';
-import { ApprovalModule } from './approval/approval.module';
-import { ExecutionModule } from './execution/execution.module';
-import { AuditModule } from './audit/audit.module';
+import { GatewayModule } from './gateway/gateway.module.js';
+import { PolicyModule } from './policy/policy.module.js';
+import { RiskModule } from './risk/risk.module.js';
+import { ToolsModule } from './tools/tools.module.js';
+import { ApprovalModule } from './approval/approval.module.js';
+import { ExecutionModule } from './execution/execution.module.js';
+import { AuditModule } from './audit/audit.module.js';
 
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { AuthModule } from './auth/auth.module';
+import { AuthModule } from './auth/auth.module.js';
 
 @Module({
   imports: [

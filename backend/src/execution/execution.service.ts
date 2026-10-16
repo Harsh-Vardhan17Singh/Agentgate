@@ -3,14 +3,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { ToolCallDto } from '../gateway/dto/tool-call.dto';
+import { ToolCallDto } from '../gateway/dto/tool-call.dto.js';
 
 import {
   ExecutionAdapter,
   ExecutionAdapterResult,
-} from './execution-adapter.interface';
+} from './execution-adapter.interface.js';
 
-import { GitHubExecutionAdapter } from './adapters/github-execution.adapter';
+import { GitHubExecutionAdapter } from './adapters/github-execution.adapter.js';
 
 @Injectable()
 export class ExecutionService {

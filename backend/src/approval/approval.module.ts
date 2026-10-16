@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { ApprovalController } from './approval.controller';
-import { ApprovalService } from './approval.service';
-import { ExecutionModule } from '../execution/execution.module';
-import { AuditModule } from '../audit/audit.module';
-import { ReviewerAuthGuard } from '../auth/reviewer-auth.guard';
+import { ApprovalController } from './approval.controller.js';
+import { ApprovalService } from './approval.service.js';
+import { ExecutionModule } from '../execution/execution.module.js';
+import { AuditModule } from '../audit/audit.module.js';
+import { ReviewerAuthGuard } from '../auth/reviewer-auth.guard.js';
 
 @Module({
   imports: [ExecutionModule, AuditModule],

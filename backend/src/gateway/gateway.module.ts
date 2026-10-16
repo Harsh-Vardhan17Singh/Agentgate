@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
-import { GatewayController } from './gateway.controller';
-import { GatewayService } from './gateway.service';
-import { AuthModule } from '../auth/auth.module';
-import { PolicyModule } from '../policy/policy.module';
-import { RiskModule } from '../risk/risk.module';
-import { ToolsModule } from '../tools/tools.module';
-import { ApprovalModule } from '../approval/approval.module';
-import { ExecutionModule } from '../execution/execution.module';
-import { AuditModule } from '../audit/audit.module';
+import { GatewayController } from './gateway.controller.js';
+import { GatewayService } from './gateway.service.js';
+import { AuthModule } from '../auth/auth.module.js';
+import { PolicyModule } from '../policy/policy.module.js';
+import { RiskModule } from '../risk/risk.module.js';
+import { ToolsModule } from '../tools/tools.module.js';
+import { ApprovalModule } from '../approval/approval.module.js';
+import { ExecutionModule } from '../execution/execution.module.js';
+import { AuditModule } from '../audit/audit.module.js';
 
 @Module({
   imports: [AuthModule,

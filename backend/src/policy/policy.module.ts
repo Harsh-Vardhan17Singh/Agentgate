@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { PolicyService } from './policy.service';
+import { PolicyService } from './policy.service.js';
 
 @Module({
   providers: [PolicyService],
