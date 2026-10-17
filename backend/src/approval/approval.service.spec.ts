@@ -11,13 +11,16 @@ describe('ApprovalService', () => {
   let service: ApprovalService;
 
   const executionService = {
-    execute: jest.fn(),
-  };
+  execute: jest.fn<
+    (request: AuthenticatedToolCall) => Promise<{ success: boolean }>
+  >(),
+};
 
-  const auditService = {
-    record: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-  };
-
+const auditService = {
+  record: jest.fn<
+    (event: Record<string, unknown>) => Promise<void>
+  >().mockResolvedValue(undefined),
+};
   const request: AuthenticatedToolCall = {
     agentId: 'test-agent',
     tool: 'github',
@@ -36,6 +39,8 @@ describe('ApprovalService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    executionService.execute.mockResolvedValue({ success: true });
 
     service = new ApprovalService(
       executionService as unknown as ExecutionService,
@@ -74,4 +79,68 @@ expect(recordedEvent).toMatchObject({
 });
 
   });
+
+    it('approves a pending request and executes it exactly once', async () => {
+    executionService.execute.mockResolvedValue({ success: true });
+
+    const approval = service.createApproval(request, risk);
+    const result = await service.approve(approval.id);
+
+    expect(result.executed).toBe(true);
+    expect(approval.status).toBe('APPROVED');
+    expect(approval.executionStatus).toBe('EXECUTED');
+    expect(approval.reviewedAt).toBeDefined();
+    expect(approval.executedAt).toBeDefined();
+    expect(executionService.execute).toHaveBeenCalledTimes(1);
+    expect(executionService.execute).toHaveBeenCalledWith(request);
+  });
+
+  it('does not allow an approval to be approved twice', async () => {
+    const approval = service.createApproval(request, risk);
+
+    await service.approve(approval.id);
+
+    await expect(service.approve(approval.id)).rejects.toThrow(
+      'already APPROVED',
+    );
+
+    expect(executionService.execute).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not allow a rejected approval to be approved', async () => {
+    const approval = service.createApproval(request, risk);
+
+    await service.reject(approval.id);
+
+    await expect(service.approve(approval.id)).rejects.toThrow(
+      'already REJECTED',
+    );
+
+    expect(executionService.execute).not.toHaveBeenCalled();
+  });
+
+  it('records a failed execution when the approved tool fails', async () => {
+    executionService.execute.mockRejectedValue(
+      new Error('Simulated execution failure'),
+    );
+
+    const approval = service.createApproval(request, risk);
+
+    await expect(service.approve(approval.id)).rejects.toThrow(
+      'Simulated execution failure',
+    );
+
+    expect(approval.status).toBe('APPROVED');
+    expect(approval.executionStatus).toBe('FAILED');
+    expect(approval.executedAt).toBeUndefined();
+    expect(executionService.execute).toHaveBeenCalledTimes(1);
+    expect(auditService.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        decision: 'APPROVED',
+        executed: false,
+        event: 'EXECUTION_FAILED',
+      }),
+    );
+  });
+
 });

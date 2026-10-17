@@ -29,17 +29,21 @@ describe('GatewayService security enforcement', () => {
     createApproval: jest.fn(),
   };
 
-  const executionService = {
-    execute: jest.fn(),
-  };
-
-  const auditService = {
+   const auditService = {
     record: jest.fn<() => Promise<void>>(),
   };
 
-  const authorizationService = {
-    authorize: jest.fn(),
-  };
+  const executionService = {
+  execute: jest.fn<
+    (request: AuthenticatedToolCall) => Promise<{ success: boolean }>
+  >(),
+};
+
+const authorizationService = {
+  authorize: jest.fn<
+    (agentId: string, tool: string, operation: string) => Promise<boolean>
+  >(),
+};
 
   const request = {
     agentId: 'test-agent',
@@ -129,10 +133,15 @@ describe('GatewayService security enforcement', () => {
 
     expect(result.decision).toBe('REQUIRE_APPROVAL');
     expect(result.executed).toBe(false);
-    expect(result.approval).toEqual({
-      id: 'approval-1',
-      status: 'PENDING',
-    });
+    
+    expect(result).toMatchObject({
+  decision: 'REQUIRE_APPROVAL',
+  executed: false,
+  approval: {
+    id: 'approval-1',
+    status: 'PENDING',
+  },
+});
     expect(approvalService.createApproval).toHaveBeenCalled();
     expect(executionService.execute).not.toHaveBeenCalled();
     expect(auditService.record).toHaveBeenCalledWith(

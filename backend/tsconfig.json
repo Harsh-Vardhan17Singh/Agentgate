@@ -19,5 +19,10 @@
     "skipLibCheck": true,
     "strict": true,
     "strictPropertyInitialization": false
-  }
+  },
+  "exclude":[
+    "node_module",
+    "dist",
+    "src-backup-before-esm-fix"
+  ]
 }
