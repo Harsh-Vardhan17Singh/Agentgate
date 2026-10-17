@@ -158,5 +158,38 @@ describe('GatewayService security enforcement', () => {
     expect(executionService.execute).not.toHaveBeenCalled();
   });
 
-  
+  it('rejects an unauthorized agent without executing the tool', async () => {
+  authorizationService.authorize.mockResolvedValue(false);
+
+  await expect(service.processToolCall(request)).rejects.toThrow(
+    'is not authorized',
+  );
+
+  expect(toolsService.findTool).not.toHaveBeenCalled();
+  expect(executionService.execute).not.toHaveBeenCalled();
+  expect(auditService.record).toHaveBeenCalledWith(
+    expect.objectContaining({
+      decision: 'BLOCK',
+      executed: false,
+      event: 'BLOCKED',
+    }),
+  );
+});
+
+it('blocks an unregistered tool operation without executing it', async () => {
+  toolsService.findTool.mockReturnValue(undefined);
+
+  const result = await service.processToolCall(request);
+
+  expect(result.decision).toBe('BLOCK');
+  expect(result.executed).toBe(false);
+  expect(executionService.execute).not.toHaveBeenCalled();
+  expect(auditService.record).toHaveBeenCalledWith(
+    expect.objectContaining({
+      decision: 'BLOCK',
+      executed: false,
+      event: 'BLOCKED',
+    }),
+  );
+});
 });
