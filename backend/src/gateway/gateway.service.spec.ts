@@ -200,5 +200,27 @@ it('blocks an unregistered tool operation without executing it', async () => {
       event: 'BLOCKED',
     }),
   );
+
+  });
+
+  
+it('does not record execution failure when successful execution audit recording fails', async () => {
+  auditService.record.mockRejectedValueOnce(
+    new Error('Audit storage unavailable'),
+  );
+
+  await expect(service.processToolCall(request)).rejects.toThrow(
+    'Audit storage unavailable',
+  );
+
+  expect(executionService.execute).toHaveBeenCalledTimes(1);
+  expect(auditService.record).toHaveBeenCalledTimes(1);
+  expect(auditService.record).toHaveBeenCalledWith(
+    expect.objectContaining({
+      executed: true,
+      event: 'EXECUTED',
+    }),
+  );
 });
+
 });

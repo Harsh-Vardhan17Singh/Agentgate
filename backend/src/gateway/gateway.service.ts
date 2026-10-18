@@ -177,42 +177,47 @@ export class GatewayService {
     }
 
     // Step 8: Execute the approved tool through ExecutionService.
-try {
-  const result =
-    await this.executionService.execute(request);
 
-  await this.auditService.record({
-    agentId: request.agentId,
-    tool: request.tool,
-    operation: request.operation,
-    target: request.target,
-    decision: 'ALLOW',
-    riskScore: risk.score,
-    riskLevel: risk.level,
-    executed: true,
-    event: 'EXECUTED',
-  });
+    // Step 8: Execute the approved tool through ExecutionService.
+    let result: Awaited<ReturnType<ExecutionService['execute']>>;
 
-  return {
-    ...response,
-    executed: true,
-    result,
-    message: 'Tool call allowed and executed.',
-  };
-} catch (error) {
-  await this.auditService.record({
-    agentId: request.agentId,
-    tool: request.tool,
-    operation: request.operation,
-    target: request.target,
-    decision: 'ALLOW',
-    riskScore: risk.score,
-    riskLevel: risk.level,
-    executed: false,
-    event: 'EXECUTION_FAILED',
-  });
+    try {
+      result = await this.executionService.execute(request);
+    } catch (error) {
+      await this.auditService.record({
+        agentId: request.agentId,
+        tool: request.tool,
+        operation: request.operation,
+        target: request.target,
+        decision: 'ALLOW',
+        riskScore: risk.score,
+        riskLevel: risk.level,
+        executed: false,
+        event: 'EXECUTION_FAILED',
+      });
 
-  throw error;
-}
+      throw error;
+    }
+
+    // Execution succeeded. Audit failures must not be treated as execution failures.
+    await this.auditService.record({
+      agentId: request.agentId,
+      tool: request.tool,
+      operation: request.operation,
+      target: request.target,
+      decision: 'ALLOW',
+      riskScore: risk.score,
+      riskLevel: risk.level,
+      executed: true,
+      event: 'EXECUTED',
+    });
+
+    return {
+      ...response,
+      executed: true,
+      result,
+      message: 'Tool call allowed and executed.',
+    };
+
   }
 }
