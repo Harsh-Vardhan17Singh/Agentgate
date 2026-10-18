@@ -143,4 +143,41 @@ expect(recordedEvent).toMatchObject({
     );
   });
 
+  
+  it('preserves successful execution status when the success audit fails', async () => {
+    const auditError = new Error('Audit storage unavailable');
+
+    // The initial APPROVED audit succeeds; the EXECUTED audit fails.
+    auditService.record
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(auditError);
+
+    const approval = service.createApproval(request, risk);
+
+    await expect(service.approve(approval.id)).rejects.toThrow(
+      'Audit storage unavailable',
+    );
+
+    expect(executionService.execute).toHaveBeenCalledTimes(1);
+    expect(approval.status).toBe('APPROVED');
+    expect(approval.executionStatus).toBe('EXECUTED');
+    expect(approval.executedAt).toBeDefined();
+
+    expect(auditService.record).toHaveBeenCalledTimes(2);
+    expect(auditService.record).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        decision: 'APPROVED',
+        executed: true,
+        event: 'EXECUTED',
+      }),
+    );
+
+    expect(auditService.record).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'EXECUTION_FAILED',
+      }),
+    );
+  });
+
+
 });

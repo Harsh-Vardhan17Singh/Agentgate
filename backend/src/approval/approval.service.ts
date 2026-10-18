@@ -104,32 +104,12 @@ export class ApprovalService {
       event: 'APPROVED',
     });
 
+    
+    let result: Awaited<ReturnType<ExecutionService['execute']>>;
+
+    // Only actual tool-execution errors should mark execution as FAILED.
     try {
-      const result = await this.executive.execute(
-        approval.request,
-      );
-
-      approval.executionStatus = 'EXECUTED';
-      approval.executedAt = new Date().toISOString();
-
-      await this.auditService.record({
-        agentId: approval.request.agentId,
-        tool: approval.request.tool,
-        operation: approval.request.operation,
-        target: approval.request.target,
-        decision: 'APPROVED',
-        riskScore: approval.risk.score,
-        riskLevel: approval.risk.level,
-        executed: true,
-        event: 'EXECUTED',
-      });
-
-      return {
-        approval,
-        executed: true,
-        result,
-        message: 'Approval granted and tool executed.',
-      };
+      result = await this.executive.execute(approval.request);
     } catch (error) {
       approval.executionStatus = 'FAILED';
 
@@ -147,6 +127,30 @@ export class ApprovalService {
 
       throw error;
     }
+
+    // Execution succeeded. Preserve the true outcome before auditing it.
+    approval.executionStatus = 'EXECUTED';
+    approval.executedAt = new Date().toISOString();
+
+    await this.auditService.record({
+      agentId: approval.request.agentId,
+      tool: approval.request.tool,
+      operation: approval.request.operation,
+      target: approval.request.target,
+      decision: 'APPROVED',
+      riskScore: approval.risk.score,
+      riskLevel: approval.risk.level,
+      executed: true,
+      event: 'EXECUTED',
+    });
+
+    return {
+      approval,
+      executed: true,
+      result,
+      message: 'Approval granted and tool executed.',
+    };
+
   }
 
   async reject(id: string): Promise<ApprovalRequest> {
