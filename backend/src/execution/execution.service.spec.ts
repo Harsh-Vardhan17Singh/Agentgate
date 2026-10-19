@@ -53,16 +53,21 @@ describe('ExecutionService', () => {
     service = module.get<ExecutionService>(ExecutionService);
   });
 
-  it('dispatches a supported operation to its adapter', async () => {
-    const result = await service.execute(request);
+  it('dispatches the exact request to its supported adapter', async () => {
+  const result = await service.execute(request);
 
-    expect(githubExecutionAdapter.supports).toHaveBeenCalledWith(
-      'github',
-      'list_branches',
-    );
-    expect(githubExecutionAdapter.execute).toHaveBeenCalledWith(request);
-    expect(result.status).toBe('SUCCESS');
-  });
+  expect(githubExecutionAdapter.supports).toHaveBeenCalledWith(
+    'github',
+    'list_branches',
+  );
+
+  const dispatchedRequest =
+    githubExecutionAdapter.execute.mock.calls[0][0];
+
+  expect(dispatchedRequest).toBe(request);
+  expect(dispatchedRequest).toEqual(request);
+  expect(result.status).toBe('SUCCESS');
+});
 
   it('rejects an unsupported operation without executing it', async () => {
     githubExecutionAdapter.supports.mockReturnValue(false);

@@ -241,6 +241,39 @@ it('prevents mutation of the stored approved request', () => {
   });
 });
 
+it('passes the exact frozen approval snapshot to execution', async () => {
+  const approval = service.createApproval(
+    {
+      ...request,
+      arguments: {
+        branch: 'test-branch',
+      },
+    },
+    risk,
+  );
+
+  await service.approve(approval.id);
+
+  const executedRequest =
+    executionService.execute.mock.calls[0][0];
+
+  expect(executedRequest).toBe(approval.request);
+  expect(Object.isFrozen(executedRequest)).toBe(true);
+  expect(Object.isFrozen(executedRequest.arguments)).toBe(true);
+
+  expect(executedRequest).toMatchObject({
+    agentId: 'test-agent',
+    tool: 'github',
+    operation: 'delete_branch',
+    target: 'test-owner/test-repository',
+    arguments: {
+      branch: 'test-branch',
+    },
+  });
+
+  expect(executionService.execute).toHaveBeenCalledTimes(1);
+});
+
 
 
 });
