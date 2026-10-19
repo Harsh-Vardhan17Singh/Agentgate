@@ -33,6 +33,22 @@ export interface ApprovalRequest {
   executedAt?: string;
 }
 
+function deepFreeze<T>(value: T): T {
+  if (
+    value !== null &&
+    typeof value === 'object' &&
+    !Object.isFrozen(value)
+  ) {
+    Object.freeze(value);
+
+    Object.values(value as Record<string, unknown>).forEach(
+      (child) => deepFreeze(child),
+    );
+  }
+
+  return value;
+}
+
 @Injectable()
 export class ApprovalService {
   private readonly approvals: ApprovalRequest[] = [];
@@ -46,14 +62,22 @@ export class ApprovalService {
     request: AuthenticatedToolCall,
     risk: RiskResult,
   ): ApprovalRequest {
-    const approval: ApprovalRequest = {
-      id: crypto.randomUUID(),
-      request,
-      risk,
-      status: 'PENDING',
-      executionStatus: 'NOT_EXECUTED',
-      createdAt: new Date().toISOString(),
-    };
+  const approvedRequest = deepFreeze(
+  structuredClone(request),
+);
+
+const approvedRisk = deepFreeze(
+  structuredClone(risk),
+);
+
+const approval: ApprovalRequest = {
+  id: crypto.randomUUID(),
+  request: approvedRequest,
+  risk: approvedRisk,
+  status: 'PENDING',
+  executionStatus: 'NOT_EXECUTED',
+  createdAt: new Date().toISOString(),
+};
 
     this.approvals.push(approval);
 

@@ -196,6 +196,51 @@ expect(recordedEvent).toMatchObject({
     expect(approval.executionStatus).toBe('EXECUTED');
   });
 
+  it('executes the original request even if the caller mutates its request afterward', async () => {
+  const mutableRequest: AuthenticatedToolCall = {
+    ...request,
+    arguments: {
+      branch: 'test-branch',
+    },
+  };
+
+  const approval = service.createApproval(mutableRequest, risk);
+
+  // Simulate the caller changing its original request after approval creation.
+  mutableRequest.arguments!.branch = 'production';
+
+  await service.approve(approval.id);
+
+  expect(executionService.execute).toHaveBeenCalledWith(
+    expect.objectContaining({
+      target: 'test-owner/test-repository',
+      arguments: expect.objectContaining({
+        branch: 'test-branch',
+      }),
+    }),
+  );
+});
+
+it('prevents mutation of the stored approved request', () => {
+  const approval = service.createApproval(
+    {
+      ...request,
+      arguments: {
+        branch: 'test-branch',
+      },
+    },
+    risk,
+  );
+
+  expect(() => {
+    approval.request.arguments!.branch = 'production';
+  }).toThrow(TypeError);
+
+  expect(approval.request.arguments).toEqual({
+    branch: 'test-branch',
+  });
+});
+
 
 
 });
