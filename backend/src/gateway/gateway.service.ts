@@ -75,9 +75,15 @@ export class GatewayService {
       };
 
       console.log(
-        '[AGENTGATE]',
-        JSON.stringify(response, null, 2),
-      );
+   '[AGENTGATE]',
+   JSON.stringify({
+    tool: request.tool,
+    operation: request.operation,
+    decision: 'BLOCK',
+    riskLevel: 'CRITICAL',
+    timestamp: response.timestamp,
+  }),
+);
 
       await this.auditService.record({
         agentId: request.agentId,
@@ -124,9 +130,15 @@ export class GatewayService {
     };
 
     console.log(
-      '[AGENTGATE]',
-      JSON.stringify(response, null, 2),
-    );
+  '[AGENTGATE]',
+  JSON.stringify({
+    tool: request.tool,
+    operation: request.operation,
+    decision,
+    riskLevel: risk.level,
+    timestamp: response.timestamp,
+  }),
+);
 
     // Step 6: Block the request if policy rejected it.
     if (decision === 'BLOCK') {

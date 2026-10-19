@@ -32,10 +32,15 @@ export class AuditService {
 
     const savedEvent = await auditEvent.save();
 
-    console.log(
-      '[AUDIT]',
-      JSON.stringify(savedEvent.toObject(), null, 2),
-    );
+   console.log(
+  '[AUDIT]',
+  JSON.stringify({
+    event: savedEvent.event,
+    tool: savedEvent.tool,
+    operation: savedEvent.operation,
+    decision: savedEvent.decision,
+  }),
+);
 
     return savedEvent;
   }
