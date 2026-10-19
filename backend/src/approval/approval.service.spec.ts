@@ -69,7 +69,7 @@ const auditService = {
     expect(service.getPendingApprovals()).toHaveLength(0);
     expect(executionService.execute).not.toHaveBeenCalled();
 
-    
+
 const recordedEvent = auditService.record.mock.calls[0][0];
 
 expect(recordedEvent).toMatchObject({
@@ -143,7 +143,7 @@ expect(recordedEvent).toMatchObject({
     );
   });
 
-  
+
   it('preserves successful execution status when the success audit fails', async () => {
     const auditError = new Error('Audit storage unavailable');
 
@@ -178,6 +178,24 @@ expect(recordedEvent).toMatchObject({
       }),
     );
   });
+
+
+
+  it('executes a concurrently approved request only once', async () => {
+    const approval = service.createApproval(request, risk);
+
+    const results = await Promise.allSettled([
+      service.approve(approval.id),
+      service.approve(approval.id),
+    ]);
+
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+    expect(results.filter((result) => result.status === 'rejected')).toHaveLength(1);
+    expect(executionService.execute).toHaveBeenCalledTimes(1);
+    expect(approval.status).toBe('APPROVED');
+    expect(approval.executionStatus).toBe('EXECUTED');
+  });
+
 
 
 });
