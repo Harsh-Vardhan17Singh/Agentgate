@@ -73,6 +73,7 @@ const auditService = {
 const recordedEvent = auditService.record.mock.calls[0][0];
 
 expect(recordedEvent).toMatchObject({
+  approvalId:approval.id,
   decision: 'REJECTED',
   event: 'REJECTED',
   executed: false,
@@ -93,6 +94,25 @@ expect(recordedEvent).toMatchObject({
     expect(approval.executedAt).toBeDefined();
     expect(executionService.execute).toHaveBeenCalledTimes(1);
     expect(executionService.execute).toHaveBeenCalledWith(request);
+    expect(auditService.record).toHaveBeenCalledTimes(2);
+
+expect(auditService.record).toHaveBeenNthCalledWith(
+  1,
+  expect.objectContaining({
+    approvalId: approval.id,
+    event: 'APPROVED',
+    executed: false,
+  }),
+);
+
+expect(auditService.record).toHaveBeenNthCalledWith(
+  2,
+  expect.objectContaining({
+    approvalId: approval.id,
+    event: 'EXECUTED',
+    executed: true,
+  }),
+);
   });
 
   it('does not allow an approval to be approved twice', async () => {
@@ -136,6 +156,7 @@ expect(recordedEvent).toMatchObject({
     expect(executionService.execute).toHaveBeenCalledTimes(1);
     expect(auditService.record).toHaveBeenCalledWith(
       expect.objectContaining({
+        approvalId:approval.id,
         decision: 'APPROVED',
         executed: false,
         event: 'EXECUTION_FAILED',
@@ -164,8 +185,10 @@ expect(recordedEvent).toMatchObject({
     expect(approval.executedAt).toBeDefined();
 
     expect(auditService.record).toHaveBeenCalledTimes(2);
+
     expect(auditService.record).toHaveBeenLastCalledWith(
       expect.objectContaining({
+        approvalId:approval.id,
         decision: 'APPROVED',
         executed: true,
         event: 'EXECUTED',

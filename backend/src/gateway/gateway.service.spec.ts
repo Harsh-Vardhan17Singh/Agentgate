@@ -146,6 +146,7 @@ const authorizationService = {
     expect(executionService.execute).not.toHaveBeenCalled();
     expect(auditService.record).toHaveBeenCalledWith(
       expect.objectContaining({
+        approvalId:'approval-1',
         decision: 'REQUIRE_APPROVAL',
         executed: false,
         event: 'APPROVAL_REQUIRED',

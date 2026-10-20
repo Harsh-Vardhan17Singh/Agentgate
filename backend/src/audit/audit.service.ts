@@ -17,6 +17,7 @@ export interface AuditEventInput {
   riskScore: number;
   riskLevel: string;
   executed: boolean;
+  approvalId?:string;
   event: AuditEventType;
 }
 

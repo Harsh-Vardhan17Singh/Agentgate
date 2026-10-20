@@ -124,6 +124,7 @@ const approval: ApprovalRequest = {
       decision: 'APPROVED',
       riskScore: approval.risk.score,
       riskLevel: approval.risk.level,
+      approvalId:approval.id,
       executed: false,
       event: 'APPROVED',
     });
@@ -145,6 +146,7 @@ const approval: ApprovalRequest = {
         decision: 'APPROVED',
         riskScore: approval.risk.score,
         riskLevel: approval.risk.level,
+        approvalId:approval.id,
         executed: false,
         event: 'EXECUTION_FAILED',
       });
@@ -164,6 +166,7 @@ const approval: ApprovalRequest = {
       decision: 'APPROVED',
       riskScore: approval.risk.score,
       riskLevel: approval.risk.level,
+      approvalId:approval.id,
       executed: true,
       event: 'EXECUTED',
     });
@@ -198,6 +201,7 @@ const approval: ApprovalRequest = {
       decision: 'REJECTED',
       riskScore: approval.risk.score,
       riskLevel: approval.risk.level,
+      approvalId:approval.id,
       executed: false,
       event: 'REJECTED',
     });

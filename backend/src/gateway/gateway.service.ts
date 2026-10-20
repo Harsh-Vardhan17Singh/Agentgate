@@ -76,7 +76,7 @@ export class GatewayService {
 
       console.log(
    '[AGENTGATE]',
-   JSON.stringify({
+  JSON.stringify({
     tool: request.tool,
     operation: request.operation,
     decision: 'BLOCK',
@@ -168,11 +168,14 @@ export class GatewayService {
         risk,
       );
 
+      
+
       await this.auditService.record({
         agentId: request.agentId,
         tool: request.tool,
         operation: request.operation,
         target: request.target,
+        approvalId:approval.id,
         decision,
         riskScore: risk.score,
         riskLevel: risk.level,

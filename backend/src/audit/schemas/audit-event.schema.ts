@@ -41,6 +41,9 @@ export class AuditEvent {
   @Prop({ required: true })
   executed: boolean;
 
+  @Prop()
+  approvalId?:string;
+
   @Prop({
     required: true,
     enum: [
