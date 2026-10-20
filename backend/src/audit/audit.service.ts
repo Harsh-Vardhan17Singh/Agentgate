@@ -46,10 +46,14 @@ export class AuditService {
     return savedEvent;
   }
 
-  async getEvents(): Promise<AuditEventDocument[]> {
-    return this.auditEventModel
-      .find()
-      .sort({ createdAt: -1 })
-      .exec();
-  }
+ async getEvents(
+  approvalId?: string,
+): Promise<AuditEventDocument[]> {
+  const filter = approvalId ? { approvalId } : {};
+
+  return this.auditEventModel
+    .find(filter)
+    .sort({ createdAt: -1 })
+    .exec();
+}
 }

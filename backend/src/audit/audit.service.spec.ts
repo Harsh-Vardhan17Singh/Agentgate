@@ -27,6 +27,7 @@ describe('AuditService', () => {
     tool: 'github',
     operation: 'delete_branch',
     target: 'test-owner/test-repository',
+    approvalId:'approval-test-123',
     decision: 'APPROVED',
     riskScore: 70,
     riskLevel: 'HIGH',
@@ -72,6 +73,11 @@ describe('AuditService', () => {
     await expect(service.record(eventInput)).resolves.toBe(savedEvent);
 
     expect(auditEventModel).toHaveBeenCalledWith(eventInput);
+    expect(auditEventModel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        approvalId:'approval-test-123',
+      }),
+    );
     expect(save).toHaveBeenCalledTimes(1);
   });
 
@@ -84,14 +90,29 @@ describe('AuditService', () => {
     );
   });
 
-  it('retrieves audit events newest first', async () => {
-    const events = [eventInput];
-    exec.mockResolvedValue(events);
+  it('retrieves all audit events newest first when no approval ID is supplied', async () => {
+  const events = [eventInput];
+  exec.mockResolvedValue(events);
 
-    await expect(service.getEvents()).resolves.toBe(events);
+  await expect(service.getEvents()).resolves.toBe(events);
 
-    expect(find).toHaveBeenCalledTimes(1);
-    expect(sort).toHaveBeenCalledWith({ createdAt: -1 });
-    expect(exec).toHaveBeenCalledTimes(1);
+  expect(find).toHaveBeenCalledWith({});
+  expect(sort).toHaveBeenCalledWith({ createdAt: -1 });
+  expect(exec).toHaveBeenCalledTimes(1);
+});
+
+it('filters audit events by approval ID when supplied', async () => {
+  const events = [eventInput];
+  exec.mockResolvedValue(events);
+
+  await expect(
+    service.getEvents('approval-test-123'),
+  ).resolves.toBe(events);
+
+  expect(find).toHaveBeenCalledWith({
+    approvalId: 'approval-test-123',
   });
+  expect(sort).toHaveBeenCalledWith({ createdAt: -1 });
+  expect(exec).toHaveBeenCalledTimes(1);
+ });
 });

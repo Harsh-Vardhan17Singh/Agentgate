@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 
@@ -15,7 +16,9 @@ export class AuditController {
   ) {}
 
   @Get()
-  getAuditLogs() {
-    return this.auditService.getEvents();
+  getAuditLogs(
+    @Query('approvalId') approvalId?: string,
+  ) {
+    return this.auditService.getEvents(approvalId);
   }
 }
