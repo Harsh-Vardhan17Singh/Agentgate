@@ -17,7 +17,7 @@ export class ApprovalController {
   ) {}
 
   @Get('pending')
-  getPendingApprovals() {
+  async getPendingApprovals() {
     return this.approvalService.getPendingApprovals();
   }
 

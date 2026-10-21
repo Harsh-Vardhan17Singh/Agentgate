@@ -3,11 +3,17 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 
 import { AuthenticatedToolCall } from '../gateway/dto/authenticated-tool-call.js';
 import { RiskResult } from '../risk/risk.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import { ExecutionService } from '../execution/execution.service.js';
+import {
+  Approval,
+  ApprovalDocument,
+} from './schemas/approval.schema.js';
 
 export type ApprovalStatus =
   | 'PENDING'
@@ -23,11 +29,8 @@ export interface ApprovalRequest {
   id: string;
   request: AuthenticatedToolCall;
   risk: RiskResult;
-
   status: ApprovalStatus;
-
   executionStatus: ExecutionStatus;
-
   createdAt: string;
   reviewedAt?: string;
   executedAt?: string;
@@ -51,70 +54,112 @@ function deepFreeze<T>(value: T): T {
 
 @Injectable()
 export class ApprovalService {
-  private readonly approvals: ApprovalRequest[] = [];
-
   constructor(
+    @InjectModel(Approval.name)
+    private readonly approvalModel: Model<Approval>,
     private readonly executive: ExecutionService,
     private readonly auditService: AuditService,
   ) {}
 
-  createApproval(
+  private toApproval(
+    document: ApprovalDocument,
+  ): ApprovalRequest {
+    const data = document.toObject();
+
+    return {
+      id: data.id,
+      request: deepFreeze(
+        structuredClone(
+          data.request as unknown as AuthenticatedToolCall,
+        ),
+      ),
+      risk: deepFreeze(
+        structuredClone(data.risk as unknown as RiskResult),
+      ),
+      status: data.status,
+      executionStatus: data.executionStatus,
+      createdAt: new Date(data.createdAt).toISOString(),
+      ...(data.reviewedAt && {
+        reviewedAt: new Date(data.reviewedAt).toISOString(),
+      }),
+      ...(data.executedAt && {
+        executedAt: new Date(data.executedAt).toISOString(),
+      }),
+    };
+  }
+
+  async createApproval(
     request: AuthenticatedToolCall,
     risk: RiskResult,
-  ): ApprovalRequest {
-  const approvedRequest = deepFreeze(
-  structuredClone(request),
-);
+  ): Promise<ApprovalRequest> {
+    const document = await this.approvalModel.create({
+      id: crypto.randomUUID(),
+      request: structuredClone(request),
+      risk: structuredClone(risk),
+      status: 'PENDING',
+      executionStatus: 'NOT_EXECUTED',
+      createdAt: new Date(),
+    });
 
-const approvedRisk = deepFreeze(
-  structuredClone(risk),
-);
-
-const approval: ApprovalRequest = {
-  id: crypto.randomUUID(),
-  request: approvedRequest,
-  risk: approvedRisk,
-  status: 'PENDING',
-  executionStatus: 'NOT_EXECUTED',
-  createdAt: new Date().toISOString(),
-};
-
-    this.approvals.push(approval);
-
-    return approval;
+    return this.toApproval(document);
   }
 
-  getPendingApprovals(): ApprovalRequest[] {
-    return this.approvals.filter(
-      (approval) => approval.status === 'PENDING',
+  async getPendingApprovals(): Promise<ApprovalRequest[]> {
+    const documents = await this.approvalModel
+      .find({ status: 'PENDING' })
+      .sort({ createdAt: -1 })
+      .exec();
+
+    return documents.map((document) =>
+      this.toApproval(document),
     );
   }
 
-  getApproval(id: string): ApprovalRequest {
-    const approval = this.approvals.find(
-      (item) => item.id === id,
-    );
+  async getApproval(id: string): Promise<ApprovalRequest> {
+    const document = await this.approvalModel
+      .findOne({ id })
+      .exec();
 
-    if (!approval) {
+    if (!document) {
       throw new NotFoundException(
         `Approval request ${id} not found.`,
       );
     }
 
-    return approval;
+    return this.toApproval(document);
   }
 
   async approve(id: string) {
-    const approval = this.getApproval(id);
+    const claimed = await this.approvalModel
+      .findOneAndUpdate(
+        { id, status: 'PENDING' },
+        {
+          $set: {
+            status: 'APPROVED',
+            reviewedAt: new Date(),
+          },
+        },
+        { new: true, runValidators: true },
+      )
+      .exec();
 
-    if (approval.status !== 'PENDING') {
+    if (!claimed) {
+      const existing = await this.approvalModel
+        .findOne({ id })
+        .exec();
+
+      if (!existing) {
+        throw new NotFoundException(
+          `Approval request ${id} not found.`,
+        );
+      }
+
       throw new ConflictException(
-        `Approval cannot be approved because it is already ${approval.status}.`,
+        `Approval cannot be approved because it is already ${existing.status}.`,
       );
     }
 
-    approval.status = 'APPROVED';
-    approval.reviewedAt = new Date().toISOString();
+    const approval = this.toApproval(claimed);
 
     await this.auditService.record({
       agentId: approval.request.agentId,
@@ -124,19 +169,24 @@ const approval: ApprovalRequest = {
       decision: 'APPROVED',
       riskScore: approval.risk.score,
       riskLevel: approval.risk.level,
-      approvalId:approval.id,
+      approvalId: approval.id,
       executed: false,
       event: 'APPROVED',
     });
 
-    
-    let result: Awaited<ReturnType<ExecutionService['execute']>>;
+    let result: Awaited<
+      ReturnType<ExecutionService['execute']>
+    >;
 
-    // Only actual tool-execution errors should mark execution as FAILED.
     try {
-      result = await this.executive.execute(approval.request);
+      result = await this.executive.execute(
+        approval.request,
+      );
     } catch (error) {
-      approval.executionStatus = 'FAILED';
+      await this.approvalModel.updateOne(
+        { id, status: 'APPROVED' },
+        { $set: { executionStatus: 'FAILED' } },
+      ).exec();
 
       await this.auditService.record({
         agentId: approval.request.agentId,
@@ -146,7 +196,7 @@ const approval: ApprovalRequest = {
         decision: 'APPROVED',
         riskScore: approval.risk.score,
         riskLevel: approval.risk.level,
-        approvalId:approval.id,
+        approvalId: approval.id,
         executed: false,
         event: 'EXECUTION_FAILED',
       });
@@ -154,9 +204,20 @@ const approval: ApprovalRequest = {
       throw error;
     }
 
-    // Execution succeeded. Preserve the true outcome before auditing it.
+    const executedAt = new Date();
+
+    await this.approvalModel.updateOne(
+      { id, status: 'APPROVED' },
+      {
+        $set: {
+          executionStatus: 'EXECUTED',
+          executedAt,
+        },
+      },
+    ).exec();
+
     approval.executionStatus = 'EXECUTED';
-    approval.executedAt = new Date().toISOString();
+    approval.executedAt = executedAt.toISOString();
 
     await this.auditService.record({
       agentId: approval.request.agentId,
@@ -166,7 +227,7 @@ const approval: ApprovalRequest = {
       decision: 'APPROVED',
       riskScore: approval.risk.score,
       riskLevel: approval.risk.level,
-      approvalId:approval.id,
+      approvalId: approval.id,
       executed: true,
       event: 'EXECUTED',
     });
@@ -177,21 +238,40 @@ const approval: ApprovalRequest = {
       result,
       message: 'Approval granted and tool executed.',
     };
-
   }
 
   async reject(id: string): Promise<ApprovalRequest> {
-    const approval = this.getApproval(id);
+    const document = await this.approvalModel
+      .findOneAndUpdate(
+        { id, status: 'PENDING' },
+        {
+          $set: {
+            status: 'REJECTED',
+            executionStatus: 'NOT_EXECUTED',
+            reviewedAt: new Date(),
+          },
+        },
+        { new: true, runValidators: true },
+      )
+      .exec();
 
-    if (approval.status !== 'PENDING') {
+    if (!document) {
+      const existing = await this.approvalModel
+        .findOne({ id })
+        .exec();
+
+      if (!existing) {
+        throw new NotFoundException(
+          `Approval request ${id} not found.`,
+        );
+      }
+
       throw new ConflictException(
-        `Approval cannot be rejected because it is already ${approval.status}.`,
+        `Approval cannot be rejected because it is already ${existing.status}.`,
       );
     }
 
-    approval.status = 'REJECTED';
-    approval.executionStatus = 'NOT_EXECUTED';
-    approval.reviewedAt = new Date().toISOString();
+    const approval = this.toApproval(document);
 
     await this.auditService.record({
       agentId: approval.request.agentId,
@@ -201,7 +281,7 @@ const approval: ApprovalRequest = {
       decision: 'REJECTED',
       riskScore: approval.risk.score,
       riskLevel: approval.risk.level,
-      approvalId:approval.id,
+      approvalId: approval.id,
       executed: false,
       event: 'REJECTED',
     });

@@ -163,7 +163,7 @@ export class GatewayService {
 
     // Step 7: Pause the request if human approval is required.
     if (decision === 'REQUIRE_APPROVAL') {
-      const approval = this.approvalService.createApproval(
+      const approval = await this.approvalService.createApproval(
         request,
         risk,
       );

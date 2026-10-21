@@ -19,13 +19,13 @@ export class Approval {
     type: MongooseSchema.Types.Mixed,
     required: true,
   })
-  request: Record<string, unknown>;
+  request: object;
 
   @Prop({
     type: MongooseSchema.Types.Mixed,
     required: true,
   })
-  risk: Record<string, unknown>;
+  risk: object;
 
   @Prop({
     required: true,
