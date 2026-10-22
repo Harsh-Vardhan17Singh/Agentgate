@@ -2,6 +2,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -55,7 +56,7 @@ function deepFreeze<T>(value: T): T {
 }
 
 @Injectable()
-export class ApprovalService {
+export class ApprovalService implements OnModuleInit{
   constructor(
     @InjectModel(Approval.name)
     private readonly approvalModel: Model<Approval>,
@@ -89,6 +90,51 @@ export class ApprovalService {
       }),
     };
   }
+
+  async onModuleInit(): Promise<void> {
+  const stuckApprovals = await this.approvalModel
+    .find({
+      status: 'APPROVED',
+      executionStatus: 'EXECUTING',
+    })
+    .exec();
+
+  for (const document of stuckApprovals) {
+    const approval = this.toApproval(document);
+
+    const updateResult = await this.approvalModel
+      .updateOne(
+        {
+          id: approval.id,
+          status: 'APPROVED',
+          executionStatus: 'EXECUTING',
+        },
+        {
+          $set: {
+            executionStatus: 'UNKNOWN',
+          },
+        },
+      )
+      .exec();
+
+    if (updateResult.matchedCount !== 1) {
+      continue;
+    }
+
+    await this.auditService.record({
+      agentId: approval.request.agentId,
+      tool: approval.request.tool,
+      operation: approval.request.operation,
+      target: approval.request.target,
+      decision: 'APPROVED',
+      riskScore: approval.risk.score,
+      riskLevel: approval.risk.level,
+      approvalId: approval.id,
+      executed: false,
+      event: 'EXECUTION_UNKNOWN',
+    });
+  }
+}
 
   async createApproval(
     request: AuthenticatedToolCall,

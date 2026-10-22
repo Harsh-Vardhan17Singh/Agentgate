@@ -61,22 +61,31 @@ records.set(record.id, record);
       return makeDocument(record);
     }),
 
-    find: jest.fn((filter: Record<string, any>) => ({
-      sort: jest.fn((_sort: Record<string, number>) => ({
-        exec: async () =>
-          [...records.values()]
-            .filter((record) =>
-              Object.entries(filter).every(
-                ([key, value]) => record[key] === value,
-              ),
-            )
-            .sort(
-              (a, b) =>
-                b.createdAt.getTime() - a.createdAt.getTime(),
-            )
-            .map(makeDocument),
-      })),
-    })),
+    
+find: jest.fn((filter: Record<string, any>) => ({
+  sort: jest.fn((_sort: Record<string, number>) => ({
+    exec: async () =>
+      [...records.values()]
+        .filter((record) =>
+          Object.entries(filter).every(
+            ([key, value]) => record[key] === value,
+          ),
+        )
+        .sort(
+          (a, b) =>
+            b.createdAt.getTime() - a.createdAt.getTime(),
+        )
+        .map(makeDocument),
+  })),
+  exec: async () =>
+    [...records.values()]
+      .filter((record) =>
+        Object.entries(filter).every(
+          ([key, value]) => record[key] === value,
+        ),
+      )
+      .map(makeDocument),
+})),
 
     findOne: jest.fn((filter: Record<string, any>) => ({
       exec: async () => {
@@ -396,4 +405,52 @@ records.set(record.id, record);
       branch: 'test-branch',
     });
   });
+
+  
+  it('marks an interrupted execution UNKNOWN during startup recovery', async () => {
+    const approval = await service.createApproval(request, risk);
+
+    records.set(approval.id, {
+      ...records.get(approval.id)!,
+      status: 'APPROVED',
+      executionStatus: 'EXECUTING',
+      reviewedAt: new Date(),
+    });
+
+    await service.onModuleInit();
+
+    const recovered = await service.getApproval(approval.id);
+
+    expect(recovered.status).toBe('APPROVED');
+    expect(recovered.executionStatus).toBe('UNKNOWN');
+    expect(executionService.execute).not.toHaveBeenCalled();
+
+    expect(auditService.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        approvalId: approval.id,
+        event: 'EXECUTION_UNKNOWN',
+        executed: false,
+      }),
+    );
+  });
+
+  it('does not change an already executed approval during startup recovery', async () => {
+    const approval = await service.createApproval(request, risk);
+
+    records.set(approval.id, {
+      ...records.get(approval.id)!,
+      status: 'APPROVED',
+      executionStatus: 'EXECUTED',
+      executedAt: new Date(),
+    });
+
+    await service.onModuleInit();
+
+    const recovered = await service.getApproval(approval.id);
+
+    expect(recovered.executionStatus).toBe('EXECUTED');
+    expect(executionService.execute).not.toHaveBeenCalled();
+    expect(auditService.record).not.toHaveBeenCalled();
+  });
+
 });
