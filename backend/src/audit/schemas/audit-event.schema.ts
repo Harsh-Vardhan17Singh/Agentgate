@@ -10,7 +10,8 @@ export type AuditEventType =
   | 'APPROVED'
   | 'REJECTED'
   | 'EXECUTED'
-  | 'EXECUTION_FAILED';
+  | 'EXECUTION_FAILED'
+  | 'EXECUTION_UNKNOWN';
 
 @Schema({
   timestamps: true,
@@ -53,6 +54,7 @@ export class AuditEvent {
       'REJECTED',
       'EXECUTED',
       'EXECUTION_FAILED',
+      'EXECUTION_UNKNOWN',
     ],
   })
   event: AuditEventType;

@@ -280,7 +280,7 @@ records.set(record.id, record);
     const updated = await service.getApproval(approval.id);
 
     expect(updated.status).toBe('APPROVED');
-    expect(updated.executionStatus).toBe('FAILED');
+    expect(updated.executionStatus).toBe('UNKNOWN');
     expect(updated.executedAt).toBeUndefined();
 
     expect(auditService.record).toHaveBeenCalledWith(
@@ -288,7 +288,7 @@ records.set(record.id, record);
         approvalId: approval.id,
         decision: 'APPROVED',
         executed: false,
-        event: 'EXECUTION_FAILED',
+        event: 'EXECUTION_UNKNOWN',
       }),
     );
   });

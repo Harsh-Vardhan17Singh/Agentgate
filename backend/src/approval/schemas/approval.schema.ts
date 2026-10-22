@@ -27,20 +27,32 @@ export class Approval {
   })
   risk: object;
 
+  
   @Prop({
     required: true,
-    enum: ['PENDING', 'APPROVED', 'REJECTED'],
-    default: 'PENDING',
-    index: true,
-  })
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
-
-  @Prop({
-    required: true,
-    enum: ['NOT_EXECUTED', 'EXECUTED', 'FAILED'],
+    enum: [
+      'NOT_EXECUTED',
+      'EXECUTING',
+      'EXECUTED',
+      'FAILED',
+      'UNKNOWN',
+    ],
     default: 'NOT_EXECUTED',
   })
-  executionStatus: 'NOT_EXECUTED' | 'EXECUTED' | 'FAILED';
+  executionStatus:
+    | 'NOT_EXECUTED'
+    | 'EXECUTING'
+    | 'EXECUTED'
+    | 'FAILED'
+    | 'UNKNOWN';
+
+    @Prop({
+      required:true,
+      enum:['PENDING','APPROVED','REJECTED'],
+      default:'PENDING',
+      index:true,
+    })
+    status:'PENDING' | 'APPROVED' | 'REJECTED';
 
   @Prop({ required: true })
   createdAt: Date;

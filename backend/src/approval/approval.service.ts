@@ -22,8 +22,10 @@ export type ApprovalStatus =
 
 export type ExecutionStatus =
   | 'NOT_EXECUTED'
+  | 'EXECUTING'
   | 'EXECUTED'
-  | 'FAILED';
+  | 'FAILED'
+  | 'UNKNOWN';
 
 export interface ApprovalRequest {
   id: string;
@@ -130,18 +132,25 @@ export class ApprovalService {
   }
 
   async approve(id: string) {
-    const claimed = await this.approvalModel
-      .findOneAndUpdate(
-        { id, status: 'PENDING' },
-        {
-          $set: {
-            status: 'APPROVED',
-            reviewedAt: new Date(),
-          },
-        },
-        { new: true, runValidators: true },
-      )
-      .exec();
+    
+const claimed = await this.approvalModel
+  .findOneAndUpdate(
+    {
+      id,
+      status: 'PENDING',
+      executionStatus: 'NOT_EXECUTED',
+    },
+    {
+      $set: {
+        status: 'APPROVED',
+        executionStatus: 'EXECUTING',
+        reviewedAt: new Date(),
+      },
+    },
+    { new: true, runValidators: true },
+  )
+  .exec();
+
 
     if (!claimed) {
       const existing = await this.approvalModel
@@ -183,10 +192,22 @@ export class ApprovalService {
         approval.request,
       );
     } catch (error) {
-      await this.approvalModel.updateOne(
-        { id, status: 'APPROVED' },
-        { $set: { executionStatus: 'FAILED' } },
-      ).exec();
+      
+await this.approvalModel
+  .updateOne(
+    {
+      id,
+      status: 'APPROVED',
+      executionStatus: 'EXECUTING',
+    },
+    {
+      $set: {
+        executionStatus: 'UNKNOWN',
+      },
+    },
+  )
+  .exec();
+
 
       await this.auditService.record({
         agentId: approval.request.agentId,
@@ -198,7 +219,7 @@ export class ApprovalService {
         riskLevel: approval.risk.level,
         approvalId: approval.id,
         executed: false,
-        event: 'EXECUTION_FAILED',
+        event: 'EXECUTION_UNKNOWN',
       });
 
       throw error;
@@ -206,15 +227,28 @@ export class ApprovalService {
 
     const executedAt = new Date();
 
-    await this.approvalModel.updateOne(
-      { id, status: 'APPROVED' },
-      {
-        $set: {
-          executionStatus: 'EXECUTED',
-          executedAt,
-        },
+    
+const updateResult = await this.approvalModel
+  .updateOne(
+    {
+      id,
+      status: 'APPROVED',
+      executionStatus: 'EXECUTING',
+    },
+    {
+      $set: {
+        executionStatus: 'EXECUTED',
+        executedAt: new Date(),
       },
-    ).exec();
+    },
+  )
+  .exec();
+
+if (updateResult.matchedCount !== 1) {
+  throw new Error(
+    'Execution succeeded, but the approval state could not be confirmed.',
+  );
+}
 
     approval.executionStatus = 'EXECUTED';
     approval.executedAt = executedAt.toISOString();
