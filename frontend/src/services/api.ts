@@ -1,9 +1,65 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  'http://localhost:3000';
 
-const REVIEWER_KEY =
-  import.meta.env.VITE_REVIEWER_KEY || '';
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+async function readError(response: Response): Promise<string> {
+  try {
+    const body = await response.json();
+    return body.message || `Request failed: ${response.status}`;
+  } catch {
+    return `Request failed: ${response.status}`;
+  }
+}
+
+async function reviewerFetch(
+  path: string,
+  options: RequestInit = {},
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    credentials: 'include',
+  });
+}
+
+export interface ReviewerSession {
+  authenticated: boolean;
+}
+
+export async function reviewerLogin(key: string): Promise<ReviewerSession> {
+  const response = await reviewerFetch('/reviewer/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key }),
+  });
+
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+
+  return response.json();
+}
+
+export async function getReviewerSession(): Promise<ReviewerSession> {
+  const response = await reviewerFetch('/reviewer/session');
+
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+
+  return response.json();
+}
+
+export async function reviewerLogout(): Promise<ReviewerSession> {
+  const response = await reviewerFetch('/reviewer/logout', {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+
+  return response.json();
+}
 
 export interface AuditEvent {
   agentId: string;
@@ -29,14 +85,10 @@ export interface Agent {
 }
 
 export async function getAgents(): Promise<Agent[]> {
-  const response = await fetch(
-    `${API_BASE_URL}/agents`,
-  );
+  const response = await reviewerFetch('/agents');
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to fetch agents: ${response.status}`,
-    );
+    throw new Error(await readError(response));
   }
 
   return response.json();
@@ -57,51 +109,30 @@ export interface ApprovalRequest {
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   executionStatus:
     | 'NOT_EXECUTED'
+    | 'EXECUTING'
     | 'EXECUTED'
-    | 'FAILED';
+    | 'FAILED'
+    | 'UNKNOWN';
   createdAt: string;
   reviewedAt?: string;
   executedAt?: string;
 }
 
-const reviewerHeaders: Record<string, string> =
-  REVIEWER_KEY
-    ? {
-        'x-reviewer-key': REVIEWER_KEY,
-      }
-    : {};
-    
 export async function getAuditLogs(): Promise<AuditEvent[]> {
-  const response = await fetch(
-    `${API_BASE_URL}/audit`,
-    {
-      headers: reviewerHeaders,
-    },
-  );
+  const response = await reviewerFetch('/audit');
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to fetch audit logs: ${response.status}`,
-    );
+    throw new Error(await readError(response));
   }
 
   return response.json();
 }
 
-export async function getPendingApprovals(): Promise<
-  ApprovalRequest[]
-> {
-  const response = await fetch(
-    `${API_BASE_URL}/approval/pending`,
-    {
-      headers: reviewerHeaders,
-    },
-  );
+export async function getPendingApprovals(): Promise<ApprovalRequest[]> {
+  const response = await reviewerFetch('/approval/pending');
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to fetch pending approvals: ${response.status}`,
-    );
+    throw new Error(await readError(response));
   }
 
   return response.json();
@@ -115,18 +146,13 @@ export async function approveRequest(
   result?: unknown;
   message: string;
 }> {
-  const response = await fetch(
-    `${API_BASE_URL}/approval/${encodeURIComponent(id)}/approve`,
-    {
-      method: 'POST',
-      headers: reviewerHeaders,
-    },
+  const response = await reviewerFetch(
+    `/approval/${encodeURIComponent(id)}/approve`,
+    { method: 'POST' },
   );
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to approve request: ${response.status}`,
-    );
+    throw new Error(await readError(response));
   }
 
   return response.json();
@@ -135,18 +161,13 @@ export async function approveRequest(
 export async function rejectRequest(
   id: string,
 ): Promise<ApprovalRequest> {
-  const response = await fetch(
-    `${API_BASE_URL}/approval/${encodeURIComponent(id)}/reject`,
-    {
-      method: 'POST',
-      headers: reviewerHeaders,
-    },
+  const response = await reviewerFetch(
+    `/approval/${encodeURIComponent(id)}/reject`,
+    { method: 'POST' },
   );
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to reject request: ${response.status}`,
-    );
+    throw new Error(await readError(response));
   }
 
   return response.json();
