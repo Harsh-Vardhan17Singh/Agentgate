@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ReviewerSessionService } from './reviewer-session.service.js';
 
 import { AuthService } from './auth.service.js';
 import { AuthorizationService } from './authorization.service.js';
@@ -27,6 +28,7 @@ import {
     AuthorizationService,
     AgentService,
     AgentSeedService,
+    ReviewerSessionService,
   ],
   exports: [
     AuthService,
