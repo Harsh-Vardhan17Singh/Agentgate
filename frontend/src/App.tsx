@@ -7,12 +7,25 @@ import {
   getAgents,
   approveRequest,
   rejectRequest,
+  reviewerLogin,
+  getReviewerSession,
+  reviewerLogout,
   type Agent,
   type ApprovalRequest,
   type AuditEvent,
 } from './services/api';
 
 function App() {
+  const [authLoading, setAuthLoading] = useState(true);
+
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const [ loginKey, setLoginKey] = useState('');
+  
+  const [loginError, setLoginError] = useState('');
+
+  const [loginSubmitting, setLoginSubmitting] = useState(false);
+
   const [activeItem, setActiveItem] =
     useState('Overview');
 
@@ -38,6 +51,75 @@ const [agentsError, setAgentsError] = useState('');
   const [requestFilter, setRequestFilter] = useState('ALL');
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function checkSession() {
+      try {
+        const session = await getReviewerSession();
+
+        if (!cancelled) {
+          setIsAuthenticated(session.authenticated);
+        }
+      } catch {
+        if (!cancelled) {
+          setIsAuthenticated(false);
+        }
+      } finally {
+        if (!cancelled) {
+          setAuthLoading(false);
+        }
+      }
+    }
+
+    checkSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+    async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoginError('');
+    setLoginSubmitting(true);
+
+    try {
+      await reviewerLogin(loginKey);
+      setLoginKey('');
+      setIsAuthenticated(true);
+    } catch (error) {
+      setLoginError(
+        error instanceof Error
+          ? error.message
+          : 'Login failed. Please try again.',
+      );
+    } finally {
+      setLoginSubmitting(false);
+    }
+  }
+
+  async function handleLogout() {
+    try {
+      await reviewerLogout();
+      setIsAuthenticated(false);
+      setAuditLogs([]);
+      setPendingApprovals([]);
+      setAgents([]);
+      setActiveItem('Overview');
+      setError('');
+    } catch (error) {
+      setLoginError(
+        error instanceof Error
+          ? error.message
+          : 'Logout failed. Please try again.',
+      );
+    }
+  }
+
+  useEffect(() => {
+
+    if (!isAuthenticated) return ;
+
     async function loadDashboardData() {
       try {
         setLoading(true);
@@ -63,9 +145,13 @@ const [agentsError, setAgentsError] = useState('');
     }
 
     loadDashboardData();
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
+
+    if(!isAuthenticated) return ;
+
+
   async function loadAgents() {
     try {
       setAgentsLoading(true);
@@ -82,7 +168,10 @@ const [agentsError, setAgentsError] = useState('');
   }
 
   loadAgents();
-}, []);
+}, [isAuthenticated]);
+
+  
+  
 
 async function handleApprove(id: string) {
   const confirmed = window.confirm(
@@ -173,6 +262,69 @@ async function handleReject(id: string) {
   return true;
 });
 
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-300">
+        Checking reviewer session...
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-slate-100">
+        <form
+          onSubmit={handleLogin}
+          className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-xl"
+        >
+          <p className="text-sm text-blue-400">
+            AI Security Gateway
+          </p>
+
+          <h1 className="mt-2 text-3xl font-semibold">
+            AgentGate
+          </h1>
+
+          <p className="mt-2 text-sm text-slate-400">
+            Sign in to review approvals and security activity.
+          </p>
+
+          <label
+            htmlFor="reviewer-key"
+            className="mt-6 block text-sm font-medium text-slate-300"
+          >
+            Reviewer API key
+          </label>
+
+          <input
+            id="reviewer-key"
+            type="password"
+            autoComplete="current-password"
+            required
+            value={loginKey}
+            onChange={(event) => setLoginKey(event.target.value)}
+            className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
+            placeholder="Enter reviewer key"
+          />
+
+          {loginError && (
+            <p role="alert" className="mt-3 text-sm text-red-400">
+              {loginError}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loginSubmitting}
+            className="mt-6 w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {loginSubmitting ? 'Signing in...' : 'Sign in'}
+          </button>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <div className="flex min-h-screen">
@@ -194,10 +346,19 @@ async function handleReject(id: string) {
                 </h2>
               </div>
 
-              <div className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-400">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                Gateway Online
-              </div>
+              <div className="flex items-center gap-4">
+  <div className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-400">
+    <span className="h-2 w-2 rounded-full bg-emerald-400" />
+    Reviewer Authenticated
+  </div>
+
+  <button
+    onClick={handleLogout}
+    className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800"
+  >
+    Log out
+  </button>
+</div>
             </div>
           </header>
 
