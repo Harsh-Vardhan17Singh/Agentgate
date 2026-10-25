@@ -42,7 +42,6 @@ export class ReviewerSessionController {
     if (!this.reviewerSessionService.validateReviewerKey(body.key)) {
       throw new UnauthorizedException('Invalid reviewer credentials.');
     }
-
     // Regenerate the session after authentication to prevent session fixation.
     await new Promise<void>((resolve, reject) => {
       request.session.regenerate((error) => {
@@ -101,12 +100,14 @@ export class ReviewerSessionController {
       });
     });
 
-    response.clearCookie('agentgate.sid', {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-    });
+
+response.clearCookie('agentgate.sid', {
+  httpOnly: true,
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  secure: process.env.NODE_ENV === 'production',
+  path: '/',
+});
+
 
     return { authenticated: false };
   }

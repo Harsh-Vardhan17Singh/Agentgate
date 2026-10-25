@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
+import type { NextFunction, Request, Response } from 'express';
 
 import { AppModule } from './app.module.js';
 
@@ -11,6 +12,9 @@ async function bootstrap() {
 
   const mongoUri = process.env.MONGODB_URI;
   const sessionSecret = process.env.REVIEWER_SESSION_SECRET;
+  const frontendOrigin =
+    process.env.FRONTEND_ORIGIN || 'http://localhost:5173';
+  const isProduction = process.env.NODE_ENV === 'production';
 
   if (!mongoUri) {
     throw new Error('MONGODB_URI is not configured.');
@@ -22,21 +26,52 @@ async function bootstrap() {
     );
   }
 
+  if (isProduction && !process.env.FRONTEND_ORIGIN) {
+    throw new Error('FRONTEND_ORIGIN must be configured in production.');
+  }
+
+  if (isProduction) {
+    // Render terminates HTTPS at its proxy.
+    app.getHttpAdapter().getInstance().set('trust proxy', 1);
+  }
+
   app.enableCors({
-    origin: 'http://localhost:5173',
+    origin: frontendOrigin,
     credentials: true,
-    methods: [
-      'GET',
-      'POST',
-      'PATCH',
-      'PUT',
-      'DELETE',
-      'OPTIONS',
-    ],
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type'],
   });
 
-  // Session middleware must run before NestJS controllers.
+
+  // Protect browser-session requests against cross-origin state changes.
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const unsafeMethod = !['GET', 'HEAD', 'OPTIONS'].includes(
+      req.method.toUpperCase(),
+    );
+
+    const origin = req.headers.origin;
+    const hasReviewerSessionCookie = req.headers.cookie
+      ?.split(';')
+      .some((cookie) => cookie.trim().startsWith('agentgate.sid='));
+
+    const invalidOrigin = origin !== undefined && origin !== frontendOrigin;
+    const missingOriginWithSession =
+      Boolean(hasReviewerSessionCookie) && origin === undefined;
+
+    if (
+      unsafeMethod &&
+      (invalidOrigin || missingOriginWithSession)
+    ) {
+      res.status(403).json({
+        statusCode: 403,
+        message: 'Origin not allowed.',
+      });
+      return;
+    }
+
+    next();
+  });
+
   app.use(
     session({
       name: 'agentgate.sid',
@@ -52,8 +87,8 @@ async function bootstrap() {
       }),
       cookie: {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
         maxAge: 1000 * 60 * 60 * 8,
         path: '/',
       },
