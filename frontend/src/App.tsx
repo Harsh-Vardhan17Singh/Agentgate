@@ -25,9 +25,8 @@ function App() {
   const [loginError, setLoginError] = useState('');
 
   const [loginSubmitting, setLoginSubmitting] = useState(false);
-
-  const [activeItem, setActiveItem] =
-    useState('Overview');
+ 
+  const [activeItem, setActiveItem] = useState('Overview');
 
   const [auditLogs, setAuditLogs] = useState<
     AuditEvent[]

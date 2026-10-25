@@ -1,12 +1,16 @@
+
 import {
   Controller,
   Get,
   Param,
   Patch,
+  UseGuards,
 } from '@nestjs/common';
 
 import { AgentService } from './agent.service.js';
+import { ReviewerAuthGuard } from './reviewer-auth.guard.js';
 
+@UseGuards(ReviewerAuthGuard)
 @Controller('agents')
 export class AgentController {
   constructor(
