@@ -41,7 +41,7 @@ The backend and frontend have been deployed. Availability of the services does n
 
 AI agents can interact with external tools to create issues, manage branches, access services, and perform other actions. Giving an agent direct access to these tools can introduce risks when requests are unsafe, unauthorized, or incorrectly interpreted.
 
-AgentGate acts as a control layer between an AI agent and the tools it can use.
+
 
 Instead of executing every request immediately, AgentGate checks whether the requested tool and operation are registered, evaluates the associated risk, applies security policies, and determines whether the request should be allowed, blocked, or sent for human approval.
 
