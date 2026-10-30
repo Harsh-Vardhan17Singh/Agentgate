@@ -12,7 +12,7 @@
 - **Frontend:** https://agentgate-kappa.vercel.app/
 - **Backend API:** https://agentgate-api-lua5.onrender.com
 
-The backend and frontend have been deployed. Availability of the services does not by itself guarantee that every frontend authentication flow or production integration has been verified end to end.
+The backend and frontend have been deployed.
 
 ---
 
