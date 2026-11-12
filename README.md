@@ -54,7 +54,6 @@ Direct AI-agent access to external tools can create several security concerns:
 
 - Unauthorized tool usage.
 - Destructive or high-risk operations.
-- Insufficient human oversight.
 - Duplicate or conflicting approval actions.
 - Limited visibility into execution decisions.
 - Difficulty investigating actions after execution.
