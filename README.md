@@ -1,6 +1,7 @@
 # AgentGate — AI Security Gateway
 
 **A security gateway for AI agents that controls tool execution through risk assessment, policy enforcement, human approval, and audit logging.**
+## Author - Harsh Vardhan Singh 
 
 [![Backend](https://img.shields.io/badge/Backend-NestJS-red)](https://nestjs.com/)
 [![Frontend](https://img.shields.io/badge/Frontend-React%20%2B%20Vite-blue)](https://vite.dev/)
