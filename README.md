@@ -441,8 +441,6 @@ VITE_API_URL=https://agentgate-api-lua5.onrender.com
 
 Vite variables prefixed with `VITE_` are included in the frontend bundle. They must never contain reviewer keys, session secrets, database credentials, or private GitHub tokens.
 
-After changing a Vite environment variable, trigger a new frontend build and deployment.
-
 ---
 
 ## Local Development
