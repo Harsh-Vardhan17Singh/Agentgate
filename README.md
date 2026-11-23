@@ -384,6 +384,8 @@ AgentGate incorporates several security controls:
 
 ### Security Limitations
 
+This project is only applicable to a particular git repo , it is cannot be used for any other repo due to security concerns and also this required github token form owner. 
+
 These controls are part of the implementation, not a guarantee that the entire application is production-secure.
 
 Deployment should include end-to-end checks for browser cookie behavior, CORS, CSRF protections, session expiration, authorization boundaries, database permissions, and external API credentials.
